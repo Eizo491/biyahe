@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>(function(){var m="light";try{m=localStorage.getItem("biyahe-theme")||"light"}catch(e){}var d=m==="dark"||(m==="auto"&&matchMedia("(prefers-color-scheme:dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";var a="blue";try{a=localStorage.getItem("biyahe-accent")||"blue"}catch(e){}document.documentElement.dataset.accent=a})()</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biyahe</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f4fd8">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/app-blue-32.png">
+<link rel="apple-touch-icon" href="assets/icons/app-blue-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="css/style.css?v=925">
+<link rel="preload" as="image" href="assets/splash-logo.webp">
+<link rel="stylesheet" href="css/login.css?v=3">
+<link rel="stylesheet" href="css/vehicle.css?v=1">
+<link rel="stylesheet" href="css/splash.css?v=25">
+<script src="js/hero.js?v=1" defer></script>
+</head>
+<body>
+<script src="js/splash.js?v=25"></script>
+<div id="auth">
+  <div class="hero" aria-hidden="true"></div>
+  <div><h1>Let's get moving</h1><p class="sub">Sign in to book rides, order food, send packages or pick up jobs as a rider.</p></div>
+  <div class="fields">
+    <label for="em">Email</label><div class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg><input id="em" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com"></div>
+    <label for="pw">Password (6+ characters)</label>
+    <div class="pw fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="3"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><input id="pw" placeholder="At least 6 characters" type="password" autocomplete="current-password"><button type="button" class="eye" aria-pressed="false" aria-label="Show password">Show</button></div>
+    <div class="upf" id="upf" hidden><label for="fn">Full name</label><div class="fld"><input id="fn" type="text" autocomplete="name" placeholder="Juan Dela Cruz"></div><label for="ph">Mobile number (optional)</label><div class="fld"><input id="ph" type="tel" autocomplete="tel" placeholder="09xx xxx xxxx"></div><label for="pw2">Confirm password</label><div class="fld"><input id="pw2" type="password" autocomplete="new-password" placeholder="Type the password again"></div></div>
+    <button class="cta" id="signin"><span class="lbl">Sign in</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><g class="arrow"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></g></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
+    <div class="or" aria-hidden="true"><span>New to Biyahe?</span></div>
+    <button class="cta alt" id="signup"><span class="lbl">Create account</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
+    <button type="button" class="back" id="tosignin" hidden>Already have an account? Sign in</button>
+  </div>
+  <div class="err" id="autherr" role="alert"></div>
+</div>
+
+<div id="app">
+<header><div class="brand"><button class="menubtn" type="button" data-menu aria-label="Open menu" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><img class="logo" src="assets/icons/app-blue-64.png" alt="" width="40" height="40"><div><h1>Biyahe</h1><p id="sub">Where to?</p></div></div><div class="hd-r"><button class="bell" id="cbell" type="button" aria-label="Notifications"><span class="bdg" hidden></span></button><button class="avbtn" type="button" data-menu aria-label="Open profile menu">?</button></div></header>
+<main class="fit">
+<section id="ride" class="on">
+  <div id="rmap" role="application" aria-label="Map. Tap to set your start and finish."></div>
+  <div class="rm-hint" id="rhint">Tap the map to set your Start</div>
+  <button class="rm-loc" id="rloc" type="button" aria-label="Use my current location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button>
+  <div class="rsheet" id="rsheet">
+    <div class="rsug" id="rsug" hidden></div>
+    <div id="rplan">
+      <div class="rf on" data-k="a"><span class="rf-l"><i class="rf-dot"></i>Start</span><input id="rp" placeholder="Tap the map or type an address" autocomplete="off" enterkeyhint="search" aria-label="Start (pick-up)"><button class="rf-go" type="button" data-go="a" aria-label="Search Start location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.500 15.500L21 21"/></svg></button></div>
+      <div class="rf" data-k="b"><span class="rf-l"><i class="rf-dot b"></i>Finish</span><input id="rd" placeholder="Where are you going?" autocomplete="off" enterkeyhint="search" aria-label="Finish (drop-off)"><button class="rf-go" type="button" data-go="b" aria-label="Search Finish location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.500 15.500L21 21"/></svg></button></div>
+      <div class="rmeta" id="rmeta"></div>
+      <div class="vopts" id="vehicles"></div>
+      <button class="cta" id="rbook" disabled>Book ride</button>
+    </div>
+    <div id="rtrip" hidden></div>
+  </div>
+</section>
+<section id="food">
+  <div id="fcats" class="chips"></div>
+  <div id="rests"><div class="empty">Loading restaurants…</div></div>
+  <button type="button" id="fcart" hidden></button>
+</section>
+<section id="deliver">
+  <label for="di">What are we delivering?</label><input id="di" placeholder="e.g. documents, keys, a cake">
+  <label for="dp">Pick up from</label><input id="dp" placeholder="Pickup address">
+  <label for="dd">Deliver to</label><input id="dd" placeholder="Drop-off address">
+  <label>Package size</label><div class="opts" id="sizes"></div>
+  <button class="cta" id="dbook" disabled>Book delivery</button>
+</section>
+<section id="activity"><div id="acts"></div></section>
+</main>
+<nav id="cnav">
+  <button data-t="ride" class="on"><picture><img src="assets/icons/scooter.png" alt="" width="28" height="28"></picture>Ride</button>
+  <button data-t="food"><picture><img src="assets/icons/food.png" alt="" width="28" height="28"></picture>Food</button>
+  <button data-t="deliver"><picture><img src="assets/icons/package.png" alt="" width="28" height="28"></picture>Deliver</button>
+  <button data-t="activity"><picture><img src="assets/icons/clock.png" alt="" width="28" height="28"></picture>Activity</button>
+</nav>
+</div>
+
+<div id="rapp">
+<header><div class="brand"><button class="menubtn" type="button" data-menu aria-label="Open menu" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><img class="logo" src="assets/icons/app-yellow-64.png" alt="" width="40" height="40"><div><h1>Biyahe Rider</h1><p id="rsub">Open bookings near you</p></div></div><div class="hd-r"><button class="bell" id="rbell" type="button" aria-label="Notifications"><span class="bdg" hidden></span></button><button class="avbtn" type="button" data-menu aria-label="Open profile menu">?</button></div></header>
+<main><div id="rdash"></div><div id="rlist"></div></main>
+<nav id="rnav"><button data-t="open" class="on">Open jobs</button><button data-t="mine">My jobs</button></nav>
+</div>
+
+<div id="aapp">
+<aside class="side">
+  <div class="brand"><img class="logo" src="assets/icons/app-blue-64.png" alt="" width="40" height="40"><div><h1>Biyahe</h1><p>Owner console</p></div></div>
+  <div id="anav"><button data-t="over" class="on">Overview</button><button data-t="apps">Applications</button><button data-t="riders">Riders</button><button data-t="alerts">Route alerts</button><button data-t="fb">Feedback</button></div>
+  <button class="signout sidetheme" type="button" data-theme-open><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.5-1.9-.3-1 .3-2.1 1.4-2.1H17a4 4 0 0 0 4-4c0-5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span>Theme &amp; colors</span></button>
+  <button class="signout" id="aout" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Sign out</span></button>
+</aside>
+<div class="wrap"><h2 id="atitle">Overview</h2><div id="alist"></div></div>
+<div id="adrawer"></div>
+</div>
+
+<div id="drawer" role="dialog" aria-modal="true" aria-label="Menu" data-role="customer">
+  <div class="dr-bg" id="drbg"></div>
+  <div class="dr-wrap"><aside class="dr-panel">
+    <div class="dr-top">
+      <button class="dr-x" id="drclose" type="button" aria-label="Close menu">&times;</button>
+      <div class="dr-av" id="drav" aria-hidden="true">?</div>
+      <h2 id="drname">Your profile</h2>
+      <p id="dremail"></p>
+      <span class="tag" id="drrole">Customer</span>
+    </div>
+    <div class="dr-scroll">
+      <div class="dr-stats"><div><b id="drs1">–</b><span id="drl1">Bookings</span></div><div><b id="drs2">–</b><span id="drl2">Completed</span></div></div>
+      <dl class="dr-info" id="drinfo"></dl>
+      <p class="dr-h">Menu</p>
+      <div class="dr-menu only-c">
+        <button type="button" class="dr-item " data-go="ride"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Book a ride</span></button>
+        <button type="button" class="dr-item " data-go="food"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v7a2 2 0 0 0 2 2v9M9 3v7a2 2 0 0 1-2 2M17 3c-2 1.5-3 4-3 7 0 1.5 1 2.5 3 2.5V21"/></svg><span>Order food</span></button>
+        <button type="button" class="dr-item " data-go="deliver"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg><span>Send a package</span></button>
+        <button type="button" class="dr-item " data-go="activity"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>My bookings</span></button>
+      </div>
+      <div class="dr-menu only-r">
+        <button type="button" class="dr-item " data-rgo="open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Open jobs</span></button>
+        <button type="button" class="dr-item " data-rgo="mine"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg><span>My jobs</span></button>
+      </div>
+      <p class="dr-h">More</p>
+      <div class="dr-menu">
+        <button type="button" class="dr-item" data-theme-open><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.5-1.9-.3-1 .3-2.1 1.4-2.1H17a4 4 0 0 0 4-4c0-5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span>Theme &amp; colors</span><em class="dr-cur" id="themecur"></em></button>
+        <button type="button" class="dr-item become only-c" id="become"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><span>Become a rider</span></button>
+        <button type="button" class="dr-item fbopen" data-fb="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg><span>Send feedback</span></button>
+      </div>
+    </div>
+    <div class="dr-foot"><button type="button" class="dr-out" id="dout"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Sign out</span></button></div>
+  </aside></div>
+</div>
+<div id="apply" role="dialog" aria-modal="true" aria-labelledby="aptitle">
+  <div class="sheet">
+    <h2 id="aptitle">Become a Biyahe rider</h2>
+    <p class="lead">Tell us about you and your vehicle. The owner reviews every application. Once it's approved, your account switches to the rider dashboard.</p>
+    <label for="apname">Full name</label><input id="apname" autocomplete="name">
+    <label for="apphone">Mobile number</label><input id="apphone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XX XXX XXXX">
+    <label>Vehicle</label><div class="opts three" id="apveh"></div>
+    <label for="applate">Plate number</label><input id="applate" autocapitalize="characters" placeholder="e.g. ABC 1234">
+    <div class="err" id="aperr" role="alert"></div>
+    <button class="cta" id="apsubmit" type="button"><span class="lbl">Apply as a rider</span></button>
+    <button class="cta alt" id="apcancel" type="button">Not now</button>
+  </div>
+</div>
+<div id="themesheet" role="dialog" aria-modal="true" aria-labelledby="thtitle">
+  <div class="sheet">
+    <h2 id="thtitle">Theme</h2>
+    <p class="lead">Pick what is easiest on your eyes. It is saved on this device.</p>
+    <label>Mode</label>
+    <div class="seg" id="themeseg" role="group" aria-label="Mode"><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button><button type="button" data-th="auto">Auto</button></div>
+    <label>Accent color</label>
+    <div class="swatches" id="accseg" role="group" aria-label="Accent color"><button type="button" data-ac="blue" style="--c:#1f4fd8" aria-label="Blue"></button><button type="button" data-ac="green" style="--c:#0f7a4f" aria-label="Green"></button><button type="button" data-ac="purple" style="--c:#6d3fd1" aria-label="Purple"></button><button type="button" data-ac="orange" style="--c:#c9500d" aria-label="Orange"></button><button type="button" data-ac="pink" style="--c:#c02673" aria-label="Pink"></button><button type="button" data-ac="teal" style="--c:#0b7285" aria-label="Teal"></button></div>
+    <button class="cta" id="thdone" type="button">Done</button>
+  </div>
+</div>
+<div id="fbsheet" role="dialog" aria-modal="true" aria-labelledby="fbtitle">
+  <div class="sheet">
+    <h2 id="fbtitle">Send feedback</h2>
+    <p class="lead">Tell the Biyahe team what's working and what isn't.</p>
+    <label>Rating (optional)</label><div class="starpick" id="fbstars"></div>
+    <label for="fbmsg">Your message</label><textarea id="fbmsg" maxlength="1000"></textarea>
+    <div class="err" id="fberr" role="alert"></div>
+    <button class="cta" id="fbsubmit" type="button"><span class="lbl">Send feedback</span></button>
+    <button class="cta alt" id="fbcancel" type="button">Cancel</button>
+  </div>
+</div>
+<div id="rvsheet" role="dialog" aria-modal="true" aria-labelledby="rvtitle">
+  <div class="sheet" id="rvbox">
+    <div class="rv-thanks"><div class="wbadge"><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="wr" cx="38" cy="38" r="34"/><path class="wc" d="M24 39l10 10 19-21"/></svg></div><h2 class="wt">Thank you!</h2><p class="wm">Your rating was sent.</p></div>
+    <h2 id="rvtitle">Rate your rider</h2>
+    <p class="lead">How was your trip or delivery? Your rating helps the Biyahe team look after riders and customers.</p>
+    <label>Rating</label><div class="starpick" id="rvstars"></div><div class="starlbl" id="rvlbl" aria-live="polite">Tap a star</div>
+    <label for="rvmsg">Comment (optional)</label><textarea id="rvmsg" maxlength="1000"></textarea>
+    <div class="err" id="rverr" role="alert"></div>
+    <button class="cta" id="rvsubmit" type="button"><span class="lbl">Send rating</span></button>
+    <button class="cta alt" id="rvcancel" type="button">Cancel</button>
+  </div>
+</div>
+<div id="store" role="dialog" aria-modal="true" aria-label="Store menu">
+  <div class="st-head"><button class="menubtn" id="stback" type="button" aria-label="Back to stores"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="st-t"><b id="stname"></b><small id="stsub"></small></div></div>
+  <div id="stmenu"></div>
+  <div class="st-bar"><button class="cta" id="fbook" disabled>Add items to order</button></div>
+</div>
+<div id="cko" role="dialog" aria-modal="true" aria-label="Review your order">
+  <div class="st-head"><button class="menubtn" id="ckoback" type="button" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="st-t"><b>Review your order</b><small>Check everything before you place it</small></div></div>
+  <div id="ckobody"><div id="ckolist"></div><button type="button" class="cta alt" id="ckoadd">+ Add from another restaurant</button></div>
+  <div class="st-bar"><label for="fa">Deliver to</label><div class="fadd"><input id="fa" placeholder="Type address or pick on map"><button class="fgps" id="fgps" type="button" aria-label="Pick location on map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button></div>
+    <div class="err" id="ckowarn" hidden>Add your delivery address to continue.</div>
+    <div class="ck-tot" id="ckotot"></div>
+    <button class="cta" id="ckoplace" disabled>Confirm &amp; place order</button></div>
+</div>
+<div id="fpick" role="dialog" aria-modal="true" aria-label="Choose delivery location">
+  <div id="fpmap"></div>
+  <div class="fp-top">
+    <button class="menubtn" id="fpback" type="button" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <input id="fpq" placeholder="Search street, barangay or place" autocomplete="off" enterkeyhint="search" aria-label="Search location">
+  </div>
+  <div class="fp-sug" id="fpsug" hidden></div>
+  <div class="rsheet" id="fpsheet">
+    <p class="fp-hint" id="fphint">Search above or tap the map to drop your pin. You can drag it too.</p>
+    <div class="fp-addr" id="fpaddr" hidden></div>
+    <button class="cta" id="fpok" type="button" disabled>Confirm location</button>
+  </div>
+</div>
+<div id="jobmap" role="dialog" aria-modal="true" aria-label="Live job map"><div id="jmap"></div><button class="tk-x" id="jmx" type="button" aria-label="Close map">&times;</button><div class="rsheet" id="jsheet"></div></div>
+<div id="track" role="dialog" aria-modal="true" aria-label="Order tracking"><div id="tmap"></div><button class="tk-x" id="tkx" type="button" aria-label="Close tracking">&times;</button><div class="rsheet" id="tsheet"></div></div>
+<div id="notif" role="dialog" aria-modal="true" aria-labelledby="nttitle">
+  <div class="sheet">
+    <div class="nt-h"><h2 id="nttitle">Notifications</h2><div class="nt-act">
+      <button type="button" class="ntb" id="ntsound" aria-pressed="true"><svg id="ntsi" viewBox="0 0 24 24" aria-hidden="true"></svg><span>Sound on</span></button>
+      <button type="button" class="ntb" id="ntclear"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.500h6V7M6.500 7l1 13h9l1-13M10 11v6M14 11v6"/></svg><span>Clear all</span></button>
+    </div></div>
+    <button class="ntp" id="ntpush" type="button" role="switch" aria-checked="false" hidden></button>
+    <div id="ntlist"></div>
+    <button class="cta alt" id="ntclose" type="button">Close</button>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script src="js/config.js?v=23"></script>
+<script src="js/common.js?v=23"></script>
+<script src="js/ui.js?v=23"></script>
+<script src="js/icons.js?v=23"></script>
+<script src="js/vehicle.js?v=1"></script>
+<script src="js/customer/state.js?v=23"></script>
+<script src="js/customer/rider-info.js?v=1"></script>
+<script src="js/customer/share.js?v=2"></script>
+<script src="js/customer/bookings.js?v=26"></script>
+<script src="js/customer/auth.js?v=23"></script>
+<script src="js/customer/map.js?v=28"></script>
+<script src="js/customer/ride.js?v=25"></script>
+<script src="js/customer/food.js?v=23"></script>
+<script src="js/customer/fpick.js?v=23"></script>
+<script src="js/customer/track.js?v=27"></script>
+<script src="js/customer/deliver.js?v=23"></script>
+<script src="js/customer/nav.js?v=23"></script>
+<script src="js/customer/apply.js?v=24"></script>
+<script src="js/customer/checkin.js?v=1"></script>
+<script src="js/customer/main.js?v=24"></script>
+<script src="js/rider/jobs.js?v=26"></script>
+<script src="js/rider/track.js?v=28"></script>
+<script src="js/rider/wakelock.js?v=1"></script>
+<script src="js/rider/map.js?v=24"></script>
+<script src="js/rider/session.js?v=24"></script>
+<script src="js/feedback.js?v=23"></script>
+<script src="js/drawer.js?v=24"></script>
+<script src="js/review.js?v=23"></script>
+<script src="js/notify.js?v=24"></script>
+<script src="js/push.js?v=23"></script>
+<script src="js/admin/admin.js?v=24"></script>
+<script src="js/theme.js?v=23"></script>
+<script src="js/main.js?v=23"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<!-- strict-origin: OpenStreetMap blocks map tiles when no Referer is sent (the "403 Access blocked" squares). Only the site name is sent, never the path, and the secret token lives in the # part, which browsers never send. -->
+<meta name="referrer" content="strict-origin">
+<title>Follow a Biyahe trip</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/app-blue-32.png">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#f5f6f1;--card:#fff;--ink:#16202e;--mute:#586474;--line:#cdd2ca;--pri:#1f4fd8;--ok:#178a4c;--warn:#b7791f;--bad:#d23b3b}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0f151d;--card:#182230;--ink:#eef1f5;--mute:#98a2b1;--line:#263245;--pri:#6f93ff}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;display:flex;flex-direction:column;max-width:560px;margin:0 auto}
+#map{flex:1;min-height:0;background:var(--line)}
+.sheet{background:var(--card);border-top:1px solid var(--line);border-radius:22px 22px 0 0;margin-top:-22px;position:relative;z-index:500;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 30px -18px rgba(15,25,40,.35)}
+.head{display:flex;align-items:center;gap:10px}
+.dot{flex:none;width:11px;height:11px;border-radius:50%;background:var(--mute)}
+.dot.live{background:var(--ok);animation:pulse 1.4s ease-out infinite}
+.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(23,138,76,.55)}100%{box-shadow:0 0 0 10px rgba(23,138,76,0)}}
+h1{font-size:18px;margin:0;line-height:1.25}
+.sub{margin:2px 0 0;color:var(--mute);font-size:14px}
+.rider{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px;border:1.5px solid var(--line);border-radius:14px}
+.rider .who{flex:1;min-width:0}.rider b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rider small{color:var(--mute);font-size:13px}
+.plate{flex:none;text-align:center;padding:4px 10px 5px;border:2px solid #16202e;border-radius:8px;background:#fff;color:#16202e;line-height:1.1}
+.plate small{display:block;font-size:9px;letter-spacing:.08em;font-weight:700;color:#586474}
+.plate b{font-size:18px;letter-spacing:.06em;font-weight:800;overflow:visible}
+.route{margin-top:12px;font-size:14px;line-height:1.5}
+.route span{color:var(--mute)}
+.fresh{margin-top:12px;font-size:13px;color:var(--mute)}
+.fresh.warn{color:var(--warn);font-weight:600}
+.msg{padding:28px 6px 10px;text-align:center}
+.msg h1{margin-bottom:6px}
+.foot{margin-top:12px;font-size:12px;color:var(--mute)}
+.recenter{position:absolute;right:12px;top:12px;z-index:600;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:800;font-size:13px;padding:8px 12px;border-radius:12px;cursor:pointer}
+.pin{position:relative;width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.pin.r{background:#1f4fd8}.pin.c{background:#178a4c}
+.pin-l{position:absolute;left:50%;top:30px;transform:translateX(-50%);white-space:nowrap;font:800 12px "Bricolage Grotesque",system-ui,sans-serif;background:#fff;color:#16202e;padding:2px 8px;border-radius:99px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.sos{margin:0 0 14px;padding:12px 14px;border-radius:14px;background:#d23b3b;color:#fff;animation:sosb 1s ease-in-out infinite alternate}
+.sos b{display:block;font-size:16px}.sos span{font-size:13px;opacity:.95}
+@keyframes sosb{from{opacity:1}to{opacity:.72}}
+@media(prefers-reduced-motion:reduce){.sos{animation:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="map" hidden></div>
+<button class="recenter" id="recenter" type="button" hidden>Recenter</button>
+<div class="sheet" id="sheet"><div class="msg"><h1>Loading trip…</h1></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script>
+// Public page: no login. The secret in the URL (#token) is the permission, and it only works while the customer keeps sharing.
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const token = decodeURIComponent(location.hash.slice(1)).trim();
+let map, rm, cm, fitted = false, timer, gone = false, sosSeen = false;
+
+const REASON = {
+  not_found: ["This link isn't valid", "Check that you copied the whole link."],
+  stopped: ["Sharing has stopped", "The person stopped sharing their trip, so their location is no longer visible."],
+  expired: ["This link has expired", "Trip links stop working after a few hours."]
+};
+const ago = s => s == null ? "" : s < 10 ? "just now" : s < 60 ? Math.round(s) + " s ago" : Math.round(s / 60) + " min ago";
+const ll = p => [p.lat, p.lng];
+const pin = (k, t) => L.divIcon({ className: "", html: `<div class="pin ${k}"></div><span class="pin-l">${t}</span>`, iconSize: [26, 26], iconAnchor: [13, 13] });
+
+function message(title, text) {
+  $("#map").hidden = true; $("#recenter").hidden = true;
+  $("#sheet").style.marginTop = "0"; $("#sheet").style.flex = "1";
+  $("#sheet").innerHTML = `<div class="msg"><h1>${esc(title)}</h1><p class="sub">${esc(text)}</p></div>`;
+  clearInterval(timer);
+}
+
+function draw(d) {
+  const name = esc(d.customer_name), r = d.rider, cust = d.customer, rp = d.rider_pos;
+  const stale = Math.max(...[cust?.age, rp?.age].filter(x => x != null), -1);
+  let title, dotc = "live", sub = "";
+  if (d.status === "cancelled") { title = "This trip was cancelled"; dotc = "bad"; }
+  else if (d.ended) { title = `${name}'s trip has ended`; dotc = ""; sub = "Locations are no longer shown."; }
+  else if (!r) { title = `${name} is waiting for a rider`; dotc = "warn"; sub = "A rider hasn't accepted yet. You'll see them here once they do."; }
+  else { title = `Following ${name}'s trip`; sub = d.status === "on_the_way" ? "The trip is underway." : "The rider is on the way to pick them up."; }
+
+  let fresh = "";
+  if (!d.ended && (cust || rp)) {
+    const old = stale > 90;
+    fresh = `<p class="fresh ${old ? "warn" : ""}">${old ? "Location hasn't updated for a while (phone may be offline or the app is closed). " : ""}${cust ? `${name}: ${ago(cust.age)}` : `Waiting for ${name}'s location`}${rp ? ` · Rider: ${ago(rp.age)}` : r ? " · Waiting for the rider's location" : ""}</p>`;
+  } else if (!d.ended && r) fresh = `<p class="fresh">Waiting for the first location…</p>`;
+
+  const sos = d.sos && !d.ended;
+  document.title = sos ? "SOS: " + d.customer_name + " needs help" : "Follow a Biyahe trip";
+  if (sos && !sosSeen) { try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 800]); } catch (_) {} }
+  sosSeen = !!sos;
+  $("#sheet").innerHTML = `${sos ? `<div class="sos" role="alert"><b>SOS from ${name}</b><span>${name} sent an alert. Try calling them now. If you can't reach them, call 911 and share the rider's name and plate below.</span></div>` : ""}<div class="head"><span class="dot ${dotc}"></span><div><h1>${title}</h1>${sub ? `<p class="sub">${esc(sub)}</p>` : ""}</div></div>
+    ${r ? `<div class="rider"><div class="who"><b>${esc(r.name)}</b><small>Rider · ${esc(r.vehicle || "")}</small></div><div class="plate" aria-label="Plate number ${esc(r.plate)}"><small>PLATE NO.</small><b>${esc(r.plate)}</b></div></div>` : ""}
+    <div class="route">${d.pickup ? `<div><span>From</span> ${esc(d.pickup)}</div>` : ""}${d.dropoff ? `<div><span>To</span> ${esc(d.dropoff)}</div>` : ""}</div>
+    ${fresh}
+    <p class="foot">Shared with you through Biyahe. This link works only while ${name} keeps sharing.</p>`;
+
+  // map
+  const pts = [];
+  if (cust) pts.push(ll(cust)); if (rp) pts.push(ll(rp));
+  $("#map").hidden = !pts.length; $("#recenter").hidden = !pts.length;
+  $("#sheet").style.marginTop = pts.length ? "" : "0"; $("#sheet").style.flex = pts.length ? "" : "1";
+  if (!pts.length) return;
+  if (!map) {
+    map = L.map("map", { zoomControl: false }).setView(pts[0], 16);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+  }
+  setTimeout(() => map.invalidateSize(), 50);
+  const put = (m, p, k, t) => { if (!p) { if (m) { m.remove(); } return null; } if (m) m.setLatLng(ll(p)); else m = L.marker(ll(p), { icon: pin(k, t) }).addTo(map); return m; };
+  rm = put(rm, rp, "r", "Rider"); cm = put(cm, cust, "c", esc(d.customer_name));
+  if (!fitted) { fitted = true; fit(); }
+}
+function fit() {
+  const p = [rm, cm].filter(Boolean).map(m => m.getLatLng());
+  if (p.length === 1) map.setView(p[0], 16); else if (p.length) map.fitBounds(L.latLngBounds(p), { padding: [50, 50], maxZoom: 17 });
+}
+$("#recenter").onclick = fit;
+
+async function poll() {
+  if (gone) return;
+  const { data, error } = await sb.rpc("get_trip_share", { p_token: token });
+  if (error) { if (!map) message("Can't load the trip", "Check your internet connection. This page will keep trying."); return; }
+  if (!data.ok) { gone = true; const m = REASON[data.reason] || REASON.not_found; message(m[0], m[1]); return; }
+  draw(data);
+}
+
+if (!token) message("This link isn't valid", "Check that you copied the whole link.");
+else { poll(); timer = setInterval(poll, 4000); }
+</script>
+</body>
+</html>

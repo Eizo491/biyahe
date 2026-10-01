@@ -1,0 +1,17 @@
+/* Vehicle markers (top-down, they rotate to face the way they drive) */
+.vh{position:relative;width:30px;height:48px}
+.vh-rot{position:absolute;inset:0;transition:transform .45s ease-out;transform-origin:50% 50%;will-change:transform}
+.vh svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 2px 2px rgba(15,25,40,.35))}
+.vh::before{content:"";position:absolute;left:50%;top:50%;width:0;height:0;border-radius:50%;transform:translate(-50%,-50%);transition:all .3s;pointer-events:none}
+.vh.hot::before{width:58px;height:58px;background:rgba(255,201,60,.38);animation:vh-hot 1.4s ease-out infinite}
+.vh.pick::before{width:64px;height:64px;background:rgba(23,138,76,.32);animation:vh-hot 1.4s ease-out infinite}
+@keyframes vh-hot{50%{transform:translate(-50%,-50%) scale(1.15)}}
+/* thumbnails in the booking pickers and the rider card */
+.vo-i{display:grid;place-items:center;height:36px;margin-bottom:2px}
+.vo-i svg,.rk-av svg{width:22px;height:35px;overflow:visible}
+.vo.sel .vo-i svg{animation:vo-bob 1s ease-in-out infinite alternate}
+@keyframes vo-bob{to{transform:translateY(-3px)}}
+.rk-av.vh-th{width:40px;height:40px;background:color-mix(in srgb,var(--pri) 10%,var(--card))}
+.rk-av.vh-th svg{width:20px;height:32px}
+.opts.three .opt.vp{flex-direction:column;align-items:center;gap:2px}
+@media(prefers-reduced-motion:reduce){.vh-rot{transition:none}.vh.hot::before,.vh.pick::before,.vo.sel .vo-i svg{animation:none}}

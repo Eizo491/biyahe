@@ -1,0 +1,44 @@
+/* Login screen (v1): drone-view hero + refined form. Uses the app's theme colours. */
+#auth{background:radial-gradient(120% 45% at 50% 0,color-mix(in srgb,var(--pri) 10%,transparent),transparent 70%)}
+.hero{height:196px;margin:0 0 26px;border-radius:28px;background:color-mix(in srgb,var(--pri) 8%,var(--card));box-shadow:0 22px 44px -26px var(--pri),inset 0 0 0 1px color-mix(in srgb,var(--pri) 16%,transparent);isolation:isolate}
+.hero::before{content:none}
+.hero svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero .h-road{fill:color-mix(in srgb,var(--pri) 15%,var(--card))}
+.hero .h-pad{fill:color-mix(in srgb,var(--pri) 4%,var(--card));stroke:color-mix(in srgb,var(--pri) 12%,var(--card))}
+.hero .h-roof{fill:var(--card);stroke:color-mix(in srgb,var(--pri) 18%,var(--card));stroke-width:1}
+.hero .h-ac{fill:color-mix(in srgb,var(--pri) 12%,var(--card))}.hero .h-fan{fill:var(--card);stroke:color-mix(in srgb,var(--pri) 22%,var(--card))}
+.hero-tag{position:absolute;left:14px;top:14px;padding:7px 13px;border-radius:99px;background:var(--pri);color:var(--onpri);font-weight:800;font-size:13px;letter-spacing:.01em;box-shadow:0 8px 18px -8px var(--pri);z-index:2}
+.h-scroll{animation:h-scroll 15s linear infinite}
+.h-sw{transform-box:fill-box;transform-origin:50% 50%;animation:h-sway var(--t,4s) ease-in-out var(--d,0s) infinite alternate}
+.h-sw.h-p{animation-name:h-swayp}
+.h-spin{animation:h-spin 9s linear infinite}
+.h-flow{animation:h-flow .9s linear infinite}
+.h-bob{animation:h-bob 1.5s ease-in-out infinite alternate}
+.h-pulse{transform-box:fill-box;transform-origin:center;animation:h-pulse 1.8s ease-out infinite}
+.h-rider{animation:h-ride .7s ease-in-out infinite alternate}
+.h-speed{animation:h-speed .5s linear infinite}
+.h-cl{animation:h-cl var(--t,24s) linear infinite alternate;--x:620px}
+@keyframes h-scroll{to{transform:translateX(-440px)}}
+@keyframes h-sway{from{transform:rotate(-3deg) scale(.96,1.02)}to{transform:rotate(4deg) scale(1.05,.98)}}
+@keyframes h-swayp{from{transform:rotate(-9deg) scale(.97)}to{transform:rotate(9deg) scale(1.04)}}
+@keyframes h-spin{to{transform:rotate(360deg)}}
+@keyframes h-flow{to{stroke-dashoffset:-18}}
+@keyframes h-bob{to{transform:translateY(-4px)}}
+@keyframes h-pulse{from{transform:scale(.4);opacity:.9}to{transform:scale(1.7);opacity:0}}
+@keyframes h-ride{from{transform:translateY(-.8px) rotate(-.6deg)}to{transform:translateY(.8px) rotate(.6deg)}}
+@keyframes h-speed{from{transform:translateX(0);opacity:.9}to{transform:translateX(-10px);opacity:.2}}
+@keyframes h-cl{to{transform:translateX(var(--x))}}
+#auth h1{font-size:34px;line-height:1.05;letter-spacing:-.025em;font-weight:800;margin:0}
+#auth .sub{margin-top:8px;font-size:16px;line-height:1.4;max-width:34ch}
+#auth label{font-weight:600;font-size:13px;color:var(--ink);margin:18px 0 7px}
+.fld{position:relative}
+.fld>svg{position:absolute;left:15px;top:50%;width:20px;height:20px;margin-top:-10px;fill:none;stroke:var(--mute);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;transition:stroke .2s}
+.fld:focus-within>svg{stroke:var(--pri)}
+#auth .fld input{height:54px;padding:0 14px 0 46px;border-radius:15px;box-shadow:0 1px 2px rgba(20,30,60,.05)}
+#auth .pw input{padding-right:70px}
+#auth .eye{font-weight:700;color:var(--pri);right:8px}
+#auth #signin{margin-top:24px;height:56px;padding:0 16px;border-radius:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--pri) 88%,#fff),var(--pri));box-shadow:0 14px 26px -14px var(--pri),inset 0 1px 0 rgba(255,255,255,.28)}
+.or{display:flex;align-items:center;gap:12px;margin:16px 0 0;color:var(--mute);font-size:13px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+#auth .cta.alt{margin-top:14px;height:56px;padding:0 16px;border-radius:16px}
+@media(prefers-reduced-motion:reduce){.h-scroll,.h-cl,.h-spin{animation:none!important}}
