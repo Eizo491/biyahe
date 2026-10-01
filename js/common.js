@@ -2,6 +2,8 @@
 const $ = s => document.querySelector(s);
 const peso = n => "₱" + Number(n).toFixed(0);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// Opened from the confirmation email? (must be read before supabase-js clears the #hash)
+const CONFIRMED = /type=(signup|email)/.test(location.hash);
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function toast(t) {

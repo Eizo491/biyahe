@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="css/style.css?v=925">
 <link rel="preload" as="image" href="assets/splash-logo.webp">
-<link rel="stylesheet" href="css/login.css?v=3">
+<link rel="stylesheet" href="css/login.css?v=4">
 <link rel="stylesheet" href="css/vehicle.css?v=1">
 <link rel="stylesheet" href="css/splash.css?v=25">
 <script src="js/hero.js?v=1" defer></script>
@@ -25,15 +25,17 @@
 <div id="auth">
   <div class="hero" aria-hidden="true"></div>
   <div><h1>Let's get moving</h1><p class="sub">Sign in to book rides, order food, send packages or pick up jobs as a rider.</p></div>
+  <div class="tabs" role="tablist"><button type="button" id="tabin" class="on" role="tab">Sign in</button><button type="button" id="tabup" role="tab">Create account</button></div>
   <div class="fields">
-    <label for="em">Email</label><div class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg><input id="em" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com"></div>
-    <label for="pw">Password (6+ characters)</label>
-    <div class="pw fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="3"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><input id="pw" placeholder="At least 6 characters" type="password" autocomplete="current-password"><button type="button" class="eye" aria-pressed="false" aria-label="Show password">Show</button></div>
-    <div class="upf" id="upf" hidden><label for="fn">Full name</label><div class="fld"><input id="fn" type="text" autocomplete="name" placeholder="Juan Dela Cruz"></div><label for="ph">Mobile number (optional)</label><div class="fld"><input id="ph" type="tel" autocomplete="tel" placeholder="09xx xxx xxxx"></div><label for="pw2">Confirm password</label><div class="fld"><input id="pw2" type="password" autocomplete="new-password" placeholder="Type the password again"></div></div>
-    <button class="cta" id="signin"><span class="lbl">Sign in</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><g class="arrow"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></g></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
-    <div class="or" aria-hidden="true"><span>New to Biyahe?</span></div>
-    <button class="cta alt" id="signup"><span class="lbl">Create account</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
-    <button type="button" class="back" id="tosignin" hidden>Already have an account? Sign in</button>
+    <div class="f" data-f="lid" data-m="in"><label for="lid">Email or mobile number</label><div class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><input id="lid" type="text" autocomplete="username" placeholder="you@email.com or 09xx xxx xxxx"  aria-describedby="lid-e"></div><small class="ferr" id="lid-e" role="alert"></small></div>
+    <div class="f" data-f="fn" data-m="up"><label for="fn">Full name</label><div class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><input id="fn" type="text" autocomplete="name" placeholder="Juan Dela Cruz"  aria-describedby="fn-e"></div><small class="ferr" id="fn-e" role="alert"></small></div>
+    <div class="f" data-f="ph" data-m="up"><label for="ph">Mobile number</label><div class="fld"><span class="pre">+63</span><input id="ph" type="tel" autocomplete="tel" placeholder="9xx xxx xxxx" inputmode="tel" aria-describedby="ph-e"></div><small class="ferr" id="ph-e" role="alert"></small></div>
+    <div class="f" data-f="em" data-m="up"><label for="em">Email</label><div class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg><input id="em" type="email" autocomplete="email" placeholder="you@email.com" inputmode="email" aria-describedby="em-e"></div><small class="ferr" id="em-e" role="alert"></small></div>
+    <div class="f" data-f="pw" ><label for="pw">Password</label><div class="pw fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="3"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><input id="pw" type="password" autocomplete="current-password" placeholder="Password"  aria-describedby="pw-e"><button type="button" class="eye" aria-pressed="false" aria-label="Show password">Show</button></div><small class="ferr" id="pw-e" role="alert"></small></div>
+    <div class="pwhelp" data-m="up" hidden><div class="meter"><i></i></div><small class="mlabel">Use a strong password</small><ul class="rules"><li data-r="len">8+ characters</li><li data-r="lo">a lowercase letter</li><li data-r="up">an UPPERCASE letter</li><li data-r="num">a number</li><li data-r="sym">a symbol (! @ # $ …)</li></ul></div>
+    <div class="f" data-f="pw2" data-m="up"><label for="pw2">Confirm password</label><div class="pw fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="3"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><input id="pw2" type="password" autocomplete="new-password" placeholder="Type it again"  aria-describedby="pw2-e"><button type="button" class="eye" aria-pressed="false" aria-label="Show password">Show</button></div><small class="ferr" id="pw2-e" role="alert"></small></div>
+    <button class="cta" id="signin" type="button" data-m="in"><span class="lbl">Sign in</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><g class="arrow"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></g></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
+    <button class="cta" id="signup" type="button" data-m="up" hidden><span class="lbl">Create my account</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
   </div>
   <div class="err" id="autherr" role="alert"></div>
 </div>
@@ -219,7 +221,7 @@
 <div id="toast" role="status"></div>
 
 <script src="js/config.js?v=23"></script>
-<script src="js/common.js?v=23"></script>
+<script src="js/common.js?v=24"></script>
 <script src="js/ui.js?v=23"></script>
 <script src="js/icons.js?v=23"></script>
 <script src="js/vehicle.js?v=1"></script>
@@ -227,7 +229,7 @@
 <script src="js/customer/rider-info.js?v=1"></script>
 <script src="js/customer/share.js?v=2"></script>
 <script src="js/customer/bookings.js?v=26"></script>
-<script src="js/customer/auth.js?v=23"></script>
+<script src="js/customer/auth.js?v=24"></script>
 <script src="js/customer/map.js?v=28"></script>
 <script src="js/customer/ride.js?v=25"></script>
 <script src="js/customer/food.js?v=23"></script>
@@ -250,6 +252,6 @@
 <script src="js/push.js?v=23"></script>
 <script src="js/admin/admin.js?v=24"></script>
 <script src="js/theme.js?v=23"></script>
-<script src="js/main.js?v=23"></script>
+<script src="js/main.js?v=24"></script>
 </body>
 </html>

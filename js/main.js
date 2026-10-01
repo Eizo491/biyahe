@@ -13,6 +13,7 @@ async function route(session) {
   const seq = ++routeSeq;
   if (!session) { stopCustomer(); stopRider(); stopAdmin(); UI.show(false); return; }
   const role = await roleOf(session.user);
+  if (typeof CONFIRMED !== "undefined" && CONFIRMED && !route.done) { route.done = true; setTimeout(() => toast("Email confirmed! Welcome to Biyahe."), 600); }
   if (seq !== routeSeq) return;
   if (role === "admin") {
     stopCustomer(); stopRider(); startAdmin(session.user);
