@@ -13,6 +13,11 @@ jobs:
       - run: |
           mkdir www && cp -r index.html rider.html share.html sw.js manifest.webmanifest css js assets www/
           npx cap add android
+          # Use Biyahe's own icon instead of the default Capacitor one
+          command -v convert >/dev/null || sudo apt-get install -y imagemagick
+          R=android/app/src/main/res
+          rm -rf $R/mipmap-anydpi-v26
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do n=${d%%:*}; z=${d##*:}; mkdir -p $R/mipmap-$n; for f in ic_launcher ic_launcher_round; do convert assets/icons/app-blue-512.png -resize ${z}x${z} $R/mipmap-$n/$f.png; done; done
           npx cap sync android
           M=android/app/src/main/AndroidManifest.xml
           sed -i 's#<application#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/><uses-permission android:name="android.permission.FOREGROUND_SERVICE"/><uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><application#' $M
