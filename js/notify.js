@@ -38,9 +38,41 @@ function ntAlarm(ms = 4000) {
 
 function ntPush(icon, title, body, quiet) {
   NT.list.unshift({ icon, title, body, at: Date.now(), read: false });
-  NT.list = NT.list.slice(0, 30); ntSave(); ntBadge(); if (!quiet) ntChime(); toast(title);
+  NT.list = NT.list.slice(0, 30); ntSave(); ntBadge(); if (!quiet) ntChime(); ntBanner(icon, title, body); ntSys(title, body);
   document.querySelectorAll(".bell").forEach(b => { b.classList.add("ring"); setTimeout(() => b.classList.remove("ring"), 900); });
   if ($("#notif").classList.contains("open")) ntRender();
+}
+// ---------- Pop-ups at the top of the screen ----------
+// App on screen: a banner slides down from the top. App in the background (or phone locked): a system notification, which the
+// phone shows as a pop-up at the top of the screen. Needs the person to tap Allow once. With a push server set up (VAPID key) the server sends them instead.
+let ntBT = 0;
+function ntBanner(icon, title, body, o = {}) {
+  let b = $("#ntbanner");
+  if (!b) { b = document.createElement("div"); b.id = "ntbanner"; b.setAttribute("role", "alert"); document.body.appendChild(b); }
+  clearTimeout(ntBT);
+  b.innerHTML = `<span class="jc-ic">${ico(icon)}</span><div><b>${esc(title)}</b><small>${esc(body)}</small>${o.ask ? `<div class="ntb-a"><button type="button" data-ntb="yes">Allow</button><button type="button" data-ntb="no">Not now</button></div>` : ""}</div>`;
+  b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+  b.onclick = async e => {
+    const a = e.target.closest("[data-ntb]");
+    if (a && a.dataset.ntb === "yes") { try { await pushOn(); toast("Notifications are on"); } catch (er) { toast(er.message || "Couldn't turn on notifications"); } }
+    if (a) { try { localStorage.setItem("biyahe-alerts-ask", "1"); } catch (er) { /* ignore */ } }
+    b.classList.remove("show");
+    if (!a && !o.ask) ntOpen();   // tap the banner to open the notification list
+  };
+  ntBT = setTimeout(() => b.classList.remove("show"), o.ask ? 12000 : 5000);
+}
+async function ntSys(title, body) {
+  try {
+    if (!ALERTS_OK || Notification.permission !== "granted" || alertsPref() === "0" || document.visibilityState === "visible") return;
+    if (PUSH_OK && await pushSub()) return;   // the push server already alerts this phone
+    const reg = await navigator.serviceWorker.getRegistration(), o = { body, icon: "assets/icons/app-blue-192.png", badge: "assets/icons/app-blue-64.png", vibrate: [150, 80, 150], tag: "biyahe-" + Date.now(), data: { url: "index.html" } };
+    if (reg) await reg.showNotification(title, o); else new Notification(title, o);
+  } catch (e) { /* ignore */ }
+}
+function ntAsk() {   // once per phone: offer to turn notifications on
+  if (!ALERTS_OK || Notification.permission !== "default" || !NT.uid) return;
+  try { if (localStorage.getItem("biyahe-alerts-ask")) return; } catch (e) { return; }
+  ntBanner("bell", "Turn on notifications?", "Get alerts at the top of your phone when your ride or a job updates.", { ask: true });
 }
 function ntBadge() {
   const n = NT.list.filter(x => !x.read).length;
@@ -91,7 +123,7 @@ function ntStart(user, role) {
   ntStop();
   Object.assign(NT, { uid: user.id, role });
   try { NT.list = JSON.parse(localStorage.getItem(ntKey()) || "[]"); } catch (e) { NT.list = []; }
-  ntBadge(); ntRender(); pushSync();
+  ntBadge(); ntRender(); pushSync(); setTimeout(ntAsk, 2500);
   if (role === "customer") sb.from("bookings").select("id,status,details").then(({ data }) => (data || []).forEach(b => NT.seen.set(String(b.id), b.status + "|" + (b.details?.stage || ""))));
   NT.chan = sb.channel("notif-" + role + "-" + user.id).on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, p => role === "customer" ? ntCustomer(p) : ntRider(p)).subscribe();
 }
