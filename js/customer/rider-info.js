@@ -18,5 +18,5 @@ function riderCard(id, done) {
   return `<div class="rp"><span class="rk-av vh-th">${vhSvg(r.vehicle || "Motorcycle")}</span>
     <div class="rp-who"><b>${esc(r.rider_name)}</b><small>${esc(r.vehicle || "Rider")}${rate}</small></div>
     <div class="rp-plate" aria-label="Plate number ${esc(r.plate)}"><small>PLATE NO.</small><b>${esc(r.plate)}</b></div></div>
-    ${done ? "" : `<small class="rp-note">Check that the plate number matches before you ride or hand over anything.</small>`}`;
+    ${done ? "" : `${ctBar(r.rider_phone)}<small class="rp-note">Check that the plate number matches before you ride or hand over anything.</small>`}`;
 }

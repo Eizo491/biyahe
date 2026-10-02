@@ -38,12 +38,51 @@ function authSet(mode) {
   $("#pw").placeholder = up ? "Create a strong password" : "Your password";
   document.querySelectorAll("#auth .f").forEach(f => fieldOk(f.dataset.f)); formMsg("");
   $("#auth .sub").textContent = up ? "Create your free account to book rides, order food and send packages." : "Sign in to book rides, order food, send packages or pick up jobs as a rider.";
-  if (up) pwLive();
+  $("#auth").classList.toggle("upm", up);
+  if (up) { pwLive(); upShow(1, 1, false); } else { $('.f[data-f="pw"]').hidden = false; $("#gor").hidden = $("#google").hidden = false; }
 }
+
+// ---------- Create account: one question per screen (name → mobile → email → password), like Google's sign-up ----------
+const UPSTEP = { fn: 1, ph: 2, em: 3, pw: 4, pw2: 4 }, UPN = 4;
+const UPTXT = [["What's your name?", "Enter your full name so riders know who they're picking up."], ["Your mobile number", "Riders may call or text you about your trip."],
+  ["Add your email", "We'll send a link to confirm it, and use it for receipts."], ["Create a password", "Pick a strong one that you don't use anywhere else."]];
+let upN = 1;
+function upShow(n, dir = 1, focus = false) {
+  upN = n;
+  document.querySelectorAll("#auth .f").forEach(f => { f.hidden = UPSTEP[f.dataset.f] !== n; });
+  $(".pwhelp").hidden = n !== 4;
+  $("#signup").hidden = n !== UPN; $("#upnext").hidden = n === UPN; $("#upback").hidden = n === 1;
+  $("#upn").textContent = `Step ${n} of ${UPN}`;
+  document.querySelectorAll(".stp-bar i").forEach((b, i) => b.classList.toggle("on", i < n));
+  $("#uph").textContent = UPTXT[n - 1][0]; $("#upp").textContent = UPTXT[n - 1][1];
+  const box = $("#auth .fields"); box.dataset.dir = dir > 0 ? "f" : "b"; box.classList.remove("stin"); void box.offsetWidth; box.classList.add("stin");
+  $("#gor").hidden = $("#google").hidden = n !== 1;   // Google button only on the first screen
+  if (focus) { const i = document.querySelector("#auth .f:not([hidden]) input"); if (i) i.focus(); }
+}
+async function upNext() {
+  if (upN === UPN) return auth("up");
+  formMsg(""); document.querySelectorAll("#auth .f").forEach(f => fieldOk(f.dataset.f));
+  let bad = false; const e = (id, m) => { fieldErr(id, m); $(`#${id}`).focus(); bad = true; };
+  if (upN === 1 && $("#fn").value.trim().length < 2) e("fn", "Please enter your full name.");
+  if (upN === 2) {
+    const phone = normPhone($("#ph").value);
+    if (!phone) e("ph", "Enter a valid mobile number, like 9xx xxx xxxx.");
+    else {   // catch a number that's already registered now, not after four screens
+      const btn = $("#upnext"); UI.busy(btn, true);
+      const { data: free, error } = await sb.rpc("phone_available", { p_phone: phone });
+      UI.busy(btn, false);
+      if (!error && free === false) e("ph", "That mobile number is already registered.");
+    }
+  }
+  if (upN === 3 && !/^\S+@\S+\.\S+$/.test($("#em").value.trim())) e("em", "Enter a valid email, like you@email.com.");
+  if (!bad) upShow(upN + 1, 1, true);
+}
+$("#upnext").onclick = upNext;
+$("#upback").onclick = () => { formMsg(""); upShow(upN - 1, -1, true); };
 
 async function auth(kind) {
   formMsg(""); document.querySelectorAll("#auth .f").forEach(f => fieldOk(f.dataset.f));
-  let bad = false; const e = (id, m) => { if (!bad) $(`#${id}`).focus(); fieldErr(id, m); bad = true; };
+  let bad = false; const e = (id, m) => { if (!bad) { if (authMode === "up") upShow(UPSTEP[id] || upN); $(`#${id}`).focus(); } fieldErr(id, m); bad = true; };
   let cred;
   if (kind === "up") {
     const name = $("#fn").value.trim(), phone = normPhone($("#ph").value), email = $("#em").value.trim(), pw = $("#pw").value, c = pwCheck(pw, email, $("#ph").value);
@@ -85,6 +124,49 @@ $("#tabin").onclick = () => authSet("in");
 $("#tabup").onclick = () => authSet("up");
 document.querySelectorAll("#auth .f input").forEach(i => {
   i.addEventListener("input", () => { fieldOk(i.id); if (i.id === "pw" || i.id === "em" || i.id === "ph") if (authMode === "up") pwLive(); });
-  if (i.id !== "pw") i.addEventListener("keydown", ev => { if (ev.key === "Enter") auth(authMode); });
+  i.addEventListener("keydown", ev => {
+    if (ev.key !== "Enter") return;
+    if (authMode === "up") { ev.preventDefault(); return i.id === "pw" ? $("#pw2").focus() : upNext(); }
+    if (i.id !== "pw") auth("in");
+  });
 });
 authSet("in");
+
+// ---------- Continue with Google ----------
+// Supabase: Authentication > Providers > Google (enable it) and add this page's address under Authentication > URL Configuration > Redirect URLs.
+$("#google").onclick = async () => {
+  const b = $("#google"); formMsg(""); UI.busy(b, true);
+  const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname } });
+  if (error) { UI.busy(b, false); formMsg(/not enabled|unsupported provider/i.test(error.message) ? "Google sign-in isn't set up yet. Turn on the Google provider in Supabase." : friendly(error.message)); }
+};
+
+// ---------- Google accounts have no phone number yet: ask for it before the app opens ----------
+const needPhone = async u => { const { data, error } = await sb.from("profiles").select("phone").eq("id", u.id).maybeSingle(); return !error && !(data && normPhone(data.phone)); };
+let phGateP = null;
+function phoneGate(user) {
+  if (phGateP) return phGateP;
+  return phGateP = new Promise(resolve => {
+    const nm = String(user.user_metadata?.full_name || user.user_metadata?.name || "").split(" ")[0], o = document.createElement("div");
+    o.id = "phgate"; o.setAttribute("role", "dialog"); o.setAttribute("aria-modal", "true");
+    o.innerHTML = `<div class="phc"><h2>${nm ? "Almost there, " + esc(nm) : "One last step"}</h2><p>Add your mobile number so your rider can reach you. You need it before you can book.</p>
+      <div class="f" data-f="gph"><label for="gph">Mobile number</label><div class="fld"><span class="pre">+63</span><input id="gph" type="tel" inputmode="tel" autocomplete="tel" placeholder="9xx xxx xxxx" aria-describedby="gph-e"></div><small class="ferr" id="gph-e" role="alert"></small></div>
+      <button class="cta" id="gok" type="button"><span class="lbl">Continue</span></button><button class="cta alt" id="gout" type="button">Use a different account</button></div>`;
+    document.body.appendChild(o);
+    const inp = o.querySelector("#gph"), ok = o.querySelector("#gok"), end = () => { o.remove(); phGateP = null; };
+    const go = async () => {
+      fieldOk("gph");
+      const phone = normPhone(inp.value);
+      if (!phone) { fieldErr("gph", "Enter a valid mobile number, like 9xx xxx xxxx."); return inp.focus(); }
+      UI.busy(ok, true);
+      const { data: free } = await sb.rpc("phone_available", { p_phone: phone });
+      if (free === false) { UI.busy(ok, false); fieldErr("gph", "That mobile number is already registered."); return inp.focus(); }
+      const { error } = await sb.rpc("set_my_phone", { p_phone: phone });
+      UI.busy(ok, false);
+      if (error) return fieldErr("gph", /already registered/i.test(error.message) ? "That mobile number is already registered." : "Couldn't save it. Run supabase/contact.sql, then try again.");
+      end(); resolve();
+    };
+    ok.onclick = go; inp.addEventListener("keydown", e => { if (e.key === "Enter") go(); }); inp.addEventListener("input", () => fieldOk("gph"));
+    o.querySelector("#gout").onclick = () => { end(); sb.auth.signOut(); };
+    setTimeout(() => inp.focus(), 50);
+  });
+}

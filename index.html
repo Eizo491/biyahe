@@ -13,9 +13,9 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/app-blue-32.png">
 <link rel="apple-touch-icon" href="assets/icons/app-blue-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="css/style.css?v=925">
+<link rel="stylesheet" href="css/style.css?v=934">
 <link rel="preload" as="image" href="assets/splash-logo.webp">
-<link rel="stylesheet" href="css/login.css?v=4">
+<link rel="stylesheet" href="css/login.css?v=7">
 <link rel="stylesheet" href="css/vehicle.css?v=1">
 <link rel="stylesheet" href="css/splash.css?v=25">
 <script src="js/hero.js?v=1" defer></script>
@@ -27,6 +27,7 @@
   <div><h1>Let's get moving</h1><p class="sub">Sign in to book rides, order food, send packages or pick up jobs as a rider.</p></div>
   <div class="tabs" role="tablist"><button type="button" id="tabin" class="on" role="tab">Sign in</button><button type="button" id="tabup" role="tab">Create account</button></div>
   <div class="fields">
+    <div class="stp" data-m="up" hidden><div class="stp-top"><button type="button" class="stp-back" id="upback" aria-label="Back" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><div class="stp-bar" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="stp-n" id="upn">Step 1 of 4</span></div><h2 id="uph"></h2><p id="upp"></p></div>
     <div class="f" data-f="lid" data-m="in"><label for="lid">Email or mobile number</label><div class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><input id="lid" type="text" autocomplete="username" placeholder="you@email.com or 09xx xxx xxxx"  aria-describedby="lid-e"></div><small class="ferr" id="lid-e" role="alert"></small></div>
     <div class="f" data-f="fn" data-m="up"><label for="fn">Full name</label><div class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><input id="fn" type="text" autocomplete="name" placeholder="Juan Dela Cruz"  aria-describedby="fn-e"></div><small class="ferr" id="fn-e" role="alert"></small></div>
     <div class="f" data-f="ph" data-m="up"><label for="ph">Mobile number</label><div class="fld"><span class="pre">+63</span><input id="ph" type="tel" autocomplete="tel" placeholder="9xx xxx xxxx" inputmode="tel" aria-describedby="ph-e"></div><small class="ferr" id="ph-e" role="alert"></small></div>
@@ -35,7 +36,10 @@
     <div class="pwhelp" data-m="up" hidden><div class="meter"><i></i></div><small class="mlabel">Use a strong password</small><ul class="rules"><li data-r="len">8+ characters</li><li data-r="lo">a lowercase letter</li><li data-r="up">an UPPERCASE letter</li><li data-r="num">a number</li><li data-r="sym">a symbol (! @ # $ …)</li></ul></div>
     <div class="f" data-f="pw2" data-m="up"><label for="pw2">Confirm password</label><div class="pw fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="3"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><input id="pw2" type="password" autocomplete="new-password" placeholder="Type it again"  aria-describedby="pw2-e"><button type="button" class="eye" aria-pressed="false" aria-label="Show password">Show</button></div><small class="ferr" id="pw2-e" role="alert"></small></div>
     <button class="cta" id="signin" type="button" data-m="in"><span class="lbl">Sign in</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><g class="arrow"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></g></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
+    <button class="cta" id="upnext" type="button" data-m="up" hidden><span class="lbl">Next</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
     <button class="cta" id="signup" type="button" data-m="up" hidden><span class="lbl">Create my account</span><span class="ico" aria-hidden="true"><svg class="i-in" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><svg class="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg></span></button>
+    <div class="or" id="gor"><span>or</span></div>
+    <button class="cta alt gbtn" id="google" type="button"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg><span>Continue with Google</span></button>
   </div>
   <div class="err" id="autherr" role="alert"></div>
 </div>
@@ -44,16 +48,19 @@
 <header><div class="brand"><button class="menubtn" type="button" data-menu aria-label="Open menu" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><img class="logo" src="assets/icons/app-blue-64.png" alt="" width="40" height="40"><div><h1>Biyahe</h1><p id="sub">Where to?</p></div></div><div class="hd-r"><button class="bell" id="cbell" type="button" aria-label="Notifications"><span class="bdg" hidden></span></button><button class="avbtn" type="button" data-menu aria-label="Open profile menu">?</button></div></header>
 <main class="fit">
 <section id="ride" class="on">
-  <div id="rmap" role="application" aria-label="Map. Tap to set your start and finish."></div>
-  <div class="rm-hint" id="rhint">Tap the map to set your Start</div>
+  <div id="rmap" role="application" aria-label="Map. Move it under the pin to set your start and finish."></div>
+  <div class="rm-hint" id="rhint">Move the map so the pin is on your Start</div>
+  <div class="rcpin a" id="rcpin" hidden aria-hidden="true"><span class="rcp-sh"></span><span class="rcp-b"></span></div>
+  <div class="rcbar" id="rcbar" hidden><div class="rca"><small id="rcl">Start</small><b id="rca">Finding address…</b></div><button type="button" class="rcx" id="rccancel" hidden aria-label="Cancel">&times;</button><button type="button" class="cta" id="rcgo">Set Start here</button></div>
   <button class="rm-loc" id="rloc" type="button" aria-label="Use my current location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg></button>
   <div class="rsheet" id="rsheet">
     <div class="rsug" id="rsug" hidden></div>
     <div id="rplan">
-      <div class="rf on" data-k="a"><span class="rf-l"><i class="rf-dot"></i>Start</span><input id="rp" placeholder="Tap the map or type an address" autocomplete="off" enterkeyhint="search" aria-label="Start (pick-up)"><button class="rf-go" type="button" data-go="a" aria-label="Search Start location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.500 15.500L21 21"/></svg></button></div>
+      <div class="rf on" data-k="a"><span class="rf-l"><i class="rf-dot"></i>Start</span><input id="rp" placeholder="Search a place or use the map" autocomplete="off" enterkeyhint="search" aria-label="Start (pick-up)"><button class="rf-go" type="button" data-go="a" aria-label="Search Start location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.500 15.500L21 21"/></svg></button></div>
       <div class="rf" data-k="b"><span class="rf-l"><i class="rf-dot b"></i>Finish</span><input id="rd" placeholder="Where are you going?" autocomplete="off" enterkeyhint="search" aria-label="Finish (drop-off)"><button class="rf-go" type="button" data-go="b" aria-label="Search Finish location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.500 15.500L21 21"/></svg></button></div>
       <div class="rmeta" id="rmeta"></div>
       <div class="vopts" id="vehicles"></div>
+      <div class="rpay" id="rpay" role="radiogroup" aria-label="Payment method"></div>
       <button class="cta" id="rbook" disabled>Book ride</button>
     </div>
     <div id="rtrip" hidden></div>
@@ -220,30 +227,31 @@
 </div>
 <div id="toast" role="status"></div>
 
-<script src="js/config.js?v=23"></script>
-<script src="js/common.js?v=24"></script>
+<script src="js/config.js?v=100"></script>
+<script src="js/common.js?v=100"></script>
 <script src="js/ui.js?v=23"></script>
 <script src="js/icons.js?v=23"></script>
 <script src="js/vehicle.js?v=1"></script>
-<script src="js/customer/state.js?v=23"></script>
-<script src="js/customer/rider-info.js?v=1"></script>
+<script src="js/contact.js?v=1"></script>
+<script src="js/customer/state.js?v=24"></script>
+<script src="js/customer/rider-info.js?v=2"></script>
 <script src="js/customer/share.js?v=2"></script>
-<script src="js/customer/bookings.js?v=26"></script>
-<script src="js/customer/auth.js?v=24"></script>
-<script src="js/customer/map.js?v=28"></script>
-<script src="js/customer/ride.js?v=25"></script>
+<script src="js/customer/bookings.js?v=27"></script>
+<script src="js/customer/auth.js?v=100"></script>
+<script src="js/customer/map.js?v=100"></script>
+<script src="js/customer/ride.js?v=26"></script>
 <script src="js/customer/food.js?v=23"></script>
-<script src="js/customer/fpick.js?v=23"></script>
-<script src="js/customer/track.js?v=27"></script>
+<script src="js/customer/fpick.js?v=99"></script>
+<script src="js/customer/track.js?v=99"></script>
 <script src="js/customer/deliver.js?v=23"></script>
 <script src="js/customer/nav.js?v=23"></script>
 <script src="js/customer/apply.js?v=24"></script>
 <script src="js/customer/checkin.js?v=1"></script>
 <script src="js/customer/main.js?v=24"></script>
-<script src="js/rider/jobs.js?v=26"></script>
+<script src="js/rider/jobs.js?v=28"></script>
 <script src="js/rider/track.js?v=28"></script>
-<script src="js/rider/wakelock.js?v=1"></script>
-<script src="js/rider/map.js?v=24"></script>
+<script src="js/rider/wakelock.js?v=2"></script>
+<script src="js/rider/map.js?v=100"></script>
 <script src="js/rider/session.js?v=24"></script>
 <script src="js/feedback.js?v=23"></script>
 <script src="js/drawer.js?v=24"></script>
@@ -252,6 +260,6 @@
 <script src="js/push.js?v=23"></script>
 <script src="js/admin/admin.js?v=24"></script>
 <script src="js/theme.js?v=23"></script>
-<script src="js/main.js?v=24"></script>
+<script src="js/main.js?v=100"></script>
 </body>
 </html>

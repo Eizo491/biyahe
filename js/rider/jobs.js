@@ -10,6 +10,8 @@ const nextFor = j => j.type === "food"
 let jobSig = "", jobPoll = null;   // jobSig: what the list on screen was drawn from (so a refresh that changes nothing doesn't redraw it)
 let jobTab = "open", me = null, jobChan = null, jobData = new Map(), rOnline = true, statsAt = 0, rStats = { today: 0, trips: 0, week: 0, rate: null };
 const isActive = j => j.status === "accepted" || j.status === "on_the_way";
+// Jobs that can open the live job map: food orders (restaurant + drop-off) and rides (pickup + drop-off pins).
+const jobHasMap = j => !!j && (j.type === "food" ? !!(j.details?.restaurant?.geo && j.details?.dropoff_geo) : j.type === "ride" && !!(j.details?.pickup_geo && j.details?.dropoff_geo));
 const timeAgo = t => { const m = Math.max(0, Math.round((Date.now() - new Date(t)) / 60000)); return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.floor(m / 60) + " h ago"; };
 
 // ---------- Earnings + stats ----------
@@ -42,8 +44,9 @@ function jobCard(j) {
       <div class="jc-fare"><b>${peso(j.amount)}</b>${j.status !== "searching" ? `<span class="tag ${j.status === "done" ? "ok" : ""}">${JOB_STATUS[j.status]}</span>` : ""}</div></div>
     <div class="jc-route"><div><i></i><span><small>${food ? "Pick up" : "From"}</small>${esc(from || "Customer's location")}</span></div><div><i class="rt-b"></i><span><small>Drop off</small>${esc(j.dropoff || "")}</span></div></div>
     ${items ? `<p class="jc-items">${items}</p>` : ""}
+    ${j.type === "ride" && PAYN[d.pay] ? `<p class="jc-pay">${esc(payRider(d.pay, j.amount))}</p>` : ""}
     ${j.status === "searching" ? `<button class="cta" data-accept="${j.id}">Accept job · ${peso(j.amount)}</button>`
-      : act ? `<div class="jc-btns">${food ? `<button class="cta alt" data-map="${j.id}">${ico("nav")}Live map</button>` : j.type === "ride" && d.pickup_geo ? `<a class="cta alt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${(j.status === "on_the_way" ? d.dropoff_geo : d.pickup_geo).lat},${(j.status === "on_the_way" ? d.dropoff_geo : d.pickup_geo).lng}&travelmode=two-wheeler">${ico("nav")}Navigate</a>` : ""}${nx ? `<button class="cta" data-id="${j.id}" data-s="${nx[0]}" data-g="${nx[2] || ""}">${nx[1]}</button>` : ""}</div>` : ""}
+      : act ? `<div class="jc-btns">${jobHasMap(j) ? `<button class="cta alt" data-map="${j.id}">${ico("nav")}Live map</button>` : j.type === "ride" && d.pickup_geo ? `<a class="cta alt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${(j.status === "on_the_way" ? d.dropoff_geo : d.pickup_geo).lat},${(j.status === "on_the_way" ? d.dropoff_geo : d.pickup_geo).lng}&travelmode=two-wheeler">${ico("nav")}Navigate</a>` : ""}${nx ? `<button class="cta" data-id="${j.id}" data-s="${nx[0]}" data-g="${nx[2] || ""}">${nx[1]}</button>` : ""}</div>` : ""}
   </article>`;
 }
 
@@ -92,7 +95,8 @@ $("#rlist").onclick = async e => {
     const a = b.dataset.accept, j = jobData.get(a), u = { status: "accepted", rider_id: me.id };
     if (j?.type === "food") u.details = { ...j.details, stage: "to_rest" };
     const { data, error } = await sb.from("bookings").update(u).eq("id", a).eq("status", "searching").select();
-    if (error) toast(error.message); else if (!data.length) toast("Too late: another rider already took that job"); else toast("Job accepted");
+    if (error) toast(error.message); else if (!data.length) toast("Too late: another rider already took that job");
+    else { toast("Job accepted"); jobData.set(String(a), data[0]); if (jobHasMap(data[0])) jmOpen(a); }   // straight to the live map: customer's location + the trip buttons
     loadJobs();
   } else jobAdvance(jobData.get(b.dataset.id), b.dataset.s, b.dataset.g);
 };

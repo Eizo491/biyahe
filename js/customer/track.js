@@ -23,7 +23,7 @@ async function openTrack(id) {
   Object.assign(TK, { b, id: String(id), stage: -1, pos: null, rs: 0, rt: 0 });
   $("#track").classList.add("on");
   TK.map = L.map("tmap", { zoomControl: false }).setView([cg.lat, cg.lng], 15);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(TK.map);
+  biyaheTiles().addTo(TK.map);
   TK.rm = L.marker([rg.lat, rg.lng], { icon: tkIcon("", "Restaurant") }).addTo(TK.map);
   TK.cm = L.marker([cg.lat, cg.lng], { icon: tkIcon("b", "You") }).addTo(TK.map);
   TK.ch = sb.channel("trk-" + TK.id).on("broadcast", { event: "pos" }, m => tkPos(m.payload)).subscribe();   // rider GPS
@@ -73,7 +73,7 @@ async function tkRoute() {   // road route from the rider to the current stop
     const rt = (await (await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`)).json()).routes?.[0];
     if (!rt || seq !== TK.rs || !TK.map) return;
     if (TK.line) TK.line.remove();
-    TK.line = L.polyline(rt.geometry.coordinates.map(([x, y]) => [y, x]), { color: "#178a4c", weight: 5, opacity: .85 }).addTo(TK.map);
+    TK.line = L.polyline(rt.geometry.coordinates.map(([x, y]) => [y, x]), { color: "#f5b800", weight: 6, opacity: 1, className: "rt-line" }).addTo(TK.map);
   } catch (e) { /* the marker still moves without a route line */ }
 }
 

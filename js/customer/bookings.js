@@ -18,7 +18,7 @@ async function loadActs() {
   <div>${esc(a.details?.summary || a.dropoff)}</div>
   ${a.rider_id ? riderCard(a.id, a.status === "done") : ""}
   ${SH_LIVE.includes(a.status) ? shareBar(a.id) : ""}
-  <div class="row" style="color:var(--mute);font-size:13px"><span>${new Date(a.created_at).toLocaleString()}</span><span class="price" style="color:var(--ink)">${peso(a.amount)}</span></div>
+  <div class="row" style="color:var(--mute);font-size:13px"><span>${new Date(a.created_at).toLocaleString()}${a.type === "ride" && PAYN[a.details?.pay] ? ` · ${PAYN[a.details.pay]}` : ""}</span><span class="price" style="color:var(--ink)">${peso(a.amount)}</span></div>
   <div class="abtns">${a.type === "food" && a.details?.restaurant?.geo && ["searching", "accepted", "on_the_way"].includes(a.status) ? `<button type="button" class="abtn pri" data-track="${a.id}">${ico("nav")}Track order</button>` : ""}${a.type === "ride" && a.details?.pickup_geo && a.details?.dropoff_geo && ["searching", "accepted", "on_the_way"].includes(a.status) ? `<button type="button" class="abtn pri" data-rtrack="${a.id}">${ico("nav")}Track ride</button>` : ""}${a.status === "searching" ? `<button type="button" class="abtn no" data-cancel="${a.id}">Cancel</button>` : ""}
   ${a.status === "done" && a.rider_id ? (rated.has(String(a.id)) ? `<div class="mute">You rated your rider <span class="stars">${"★".repeat(rated.get(String(a.id)))}</span></div>` : `<button type="button" class="abtn pri" data-rate="${a.id}">Rate your rider</button>`) : ""}</div></div>`).join("")
   : `<div class="empty">No trips or orders yet. Book a ride, order food or send a package.</div>`;

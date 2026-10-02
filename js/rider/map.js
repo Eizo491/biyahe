@@ -1,21 +1,28 @@
-// Rider live job map (food jobs): your GPS, the store, the customer (their live GPS when shared), route + next-step button.
+// Rider live job map (food orders and rides): your GPS, the pickup, the drop-off, the customer (their live GPS when shared), route + next-step button.
+// It opens by itself when the rider accepts a job, so Start trip / Mark done etc. are right on the map.
 const JM = {};
 const jmStage = b => b.status === "on_the_way" ? 3 : b.details?.stage === "at_rest" ? 2 : 1;
-const jmTarget = () => jmStage(JM.b) < 3 ? JM.b.details.restaurant.geo : (JM.cust || JM.b.details.dropoff_geo);
+const jmFood = b => b.type === "food";
+const jmPick = b => jmFood(b) ? b.details.restaurant.geo : b.details.pickup_geo;
+// Where the rider is heading now. Food: restaurant, then the customer. Ride: the customer (live, else their pickup pin), then the drop-off.
+const jmTarget = () => { const b = JM.b, s = jmStage(b); return jmFood(b) ? (s < 3 ? jmPick(b) : (JM.cust || b.details.dropoff_geo)) : (s < 3 ? (JM.cust || jmPick(b)) : b.details.dropoff_geo); };
+const jmLiveStage = s => jmFood(JM.b) ? s === 3 : s < 3;   // the stages where the customer's live dot is the target
 
 function jmOpen(id) {
-  const j = jobData.get(String(id)), rg = j?.details?.restaurant?.geo, cg = j?.details?.dropoff_geo;
+  const j = jobData.get(String(id)), rg = j && (j.type === "food" ? j.details?.restaurant?.geo : j.details?.pickup_geo), cg = j?.details?.dropoff_geo;
   if (!rg || !cg) { toast("No map for this job"); return; }
   jmClose();
   Object.assign(JM, { b: j, id: String(id), me: TRK.last || null, cust: TRK.cust?.[String(id)] || null, rs: 0, rt: 0, stage: -1 });
   $("#jobmap").classList.add("on");
+  JM.cphone = CT_CUST.get(String(id)) || null;
+  ctCustomerPhone(id).then(p => { if (JM.id === String(id) && p && p !== JM.cphone) { JM.cphone = p; jmRender(); } });   // customer's phone for Call / Message
   JM.map = L.map("jmap", { zoomControl: false }).setView([cg.lat, cg.lng], 15);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(JM.map);
+  biyaheTiles().addTo(JM.map);
   JM.rm = L.marker([rg.lat, rg.lng], { icon: tkIcon("", "Pick up") }).addTo(JM.map);
   JM.cm = L.marker([cg.lat, cg.lng], { icon: tkIcon("b", "Drop off") }).addTo(JM.map);
   JM.bc = sb.channel("jmb-" + JM.id).on("postgres_changes", { event: "UPDATE", schema: "public", table: "bookings", filter: "id=eq." + JM.id }, p => {
     JM.b = p.new;
-    if (p.new.status === "done" || p.new.status === "cancelled") { toast(p.new.status === "done" ? "Delivery complete. Nice work!" : "This order was cancelled"); jmClose(); return; }
+    if (p.new.status === "done" || p.new.status === "cancelled") { toast(p.new.status === "done" ? (jmFood(JM.b) ? "Delivery complete. Nice work!" : "Trip complete. Nice work!") : "This job was cancelled"); jmClose(); loadJobs(); return; }
     jmRender();
   }).subscribe();
   if (JM.me) jmMe();
@@ -27,6 +34,7 @@ function jmOpen(id) {
 function jmEta() {
   if (!JM.me) return "Getting your GPS position…";
   const s = jmStage(JM.b), m = rmDist(JM.me, jmTarget());
+  if (s === 1 && !jmFood(JM.b) && rmDist(JM.me, jmTarget()) <= 100) return "You're at the pickup";
   return s === 2 ? "You're at the pickup" : `${Math.max(1, Math.ceil(m / RM_MPM))} min · ${(m / 1000).toFixed(1)} km to ${s < 3 ? "pick up" : "drop off"}`;
 }
 function jmMe() {   // your own GPS moved (called from rider/track.js)
@@ -40,19 +48,22 @@ function jmMe() {   // your own GPS moved (called from rider/track.js)
 }
 function jmCust(id, p) {   // the customer's live GPS arrived
   if (!JM.map || id !== JM.id) return;
-  JM.cust = p; const ll = [p.lat, p.lng];
+  const first = !JM.cl; JM.cust = p; const ll = [p.lat, p.lng];
   if (JM.cl) JM.cl.setLatLng(ll);
-  else { JM.cl = L.marker(ll, { icon: L.divIcon({ className: "rm-glide", html: `<div class="rm-me"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 300 }).addTo(JM.map); JM.cl.bindTooltip("Customer (live)", { permanent: true, direction: "top", offset: [0, -12] }); if (jmStage(JM.b) === 3) jmRender(); }
+  else { JM.cl = L.marker(ll, { icon: L.divIcon({ className: "rm-glide", html: `<div class="rm-me"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] }), zIndexOffset: 300 }).addTo(JM.map); JM.cl.bindTooltip("Customer (live)", { permanent: true, direction: "top", offset: [0, -12] }); if (jmLiveStage(jmStage(JM.b))) { jmRender(); JM.rt = Date.now(); jmRoute(); } }
+  if (!first && jmLiveStage(jmStage(JM.b)) && Date.now() - (JM.rt || 0) > 20000) { JM.rt = Date.now(); jmRoute(); }   // customer moved: refresh the route to them now and then
   const e = $("#jmeta"); if (e) e.textContent = jmEta();
 }
 
 function jmRender() {
-  const b = JM.b, d = b.details, s = jmStage(b), rn = esc(d.restaurant.name), nx = nextFor(b), t = jmTarget();
+  const b = JM.b, d = b.details, s = jmStage(b), food = jmFood(b), rn = esc(food ? d.restaurant.name : (b.pickup || "Customer's pickup point")), nx = nextFor(b), t = jmTarget();
   const items = (d.items || []).map(i => `${i.q}× ${esc(i.name)}`).join(", ");
-  $("#jsheet").innerHTML = `<div class="rt"><span class="jc-ic">${ico("nav")}</span><div><b>${["", `Head to ${rn}`, `Collect the order at ${rn}`, "Deliver to the customer"][s]}</b><small id="jmeta">${jmEta()}</small></div><div class="jc-fare"><b>${peso(b.amount)}</b></div></div>
+  $("#jsheet").innerHTML = `<div class="rt"><span class="jc-ic">${ico("nav")}</span><div><b>${food ? ["", `Head to ${rn}`, `Collect the order at ${rn}`, "Deliver to the customer"][s] : ["", "Go to the customer", "", "Take the customer to the drop-off"][s]}</b><small id="jmeta">${jmEta()}</small></div><div class="jc-fare"><b>${peso(b.amount)}</b></div></div>
     <div class="jc-route"><div><i></i><span><small>Pick up</small>${rn}</span></div><div><i class="rt-b"></i><span><small>Drop off</small>${esc(b.dropoff)}</span></div></div>
     ${items ? `<p class="jc-items">${items}</p>` : ""}
-    <p class="rt-note">${s === 3 ? (JM.cust ? "Showing the customer's live location." : "Customer isn't sharing live location yet. Using their address.") : "Your live location is shared with the customer."}</p>
+    ${!food && PAYN[d.pay] ? `<p class="jc-pay">${esc(payRider(d.pay, b.amount))}</p>` : ""}
+    <p class="rt-note">${jmLiveStage(s) ? (JM.cust ? "Showing the customer's live location." : `Customer isn't sharing live location yet. Using their ${food ? "address" : "pickup pin"}.`) : "Your live location is shared with the customer."}</p>
+    ${ctBar(JM.cphone)}
     <div class="jc-btns"><a class="cta alt" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${t.lat},${t.lng}&travelmode=two-wheeler">${ico("nav")}Navigate</a>${nx ? `<button class="cta" data-adv>${nx[1]}</button>` : ""}</div>`;
   if (s !== JM.stage) { JM.stage = s; if (JM.line) { JM.line.remove(); JM.line = null; } jmRoute(); jmFit(); }
 }
@@ -65,7 +76,7 @@ async function jmRoute() {
     const rt = (await (await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`)).json()).routes?.[0];
     if (!rt || seq !== JM.rs || !JM.map) return;
     if (JM.line) JM.line.remove();
-    JM.line = L.polyline(rt.geometry.coordinates.map(([x, y]) => [y, x]), { color: accent(), weight: 5, opacity: .85 }).addTo(JM.map);
+    JM.line = L.polyline(rt.geometry.coordinates.map(([x, y]) => [y, x]), { color: "#f5b800", weight: 6, opacity: 1, className: "rt-line" }).addTo(JM.map);
   } catch (e) { /* keep going without a route line */ }
 }
 function jmFit() {

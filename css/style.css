@@ -725,3 +725,70 @@ nav button::after{content:"";position:absolute;left:32%;right:32%;bottom:0;heigh
 .fields .upf{display:grid;gap:6px}.fields .upf[hidden]{display:none}.fields .back{background:none;border:0;color:var(--pri);font-weight:700;padding:10px}
 #gpspill{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;padding:8px 14px;border-radius:99px;background:#0b8a4b;color:#fff;font:700 12px system-ui;box-shadow:0 8px 20px -8px #000;max-width:94vw;text-align:center}
 #gpspill.bad{background:#c62828}
+
+/* ---------- Ride map: smaller suggestion list, centre pin + confirm bar, easier-to-grab pins ---------- */
+.rsug{max-height:min(27vh,172px)}
+.rsug button{padding:8px 12px;font-size:13.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rsug button span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rsug-msg{padding:9px 12px;font-size:12.5px}
+.rm-pin::after{content:"";position:absolute;inset:-16px;border-radius:50%}   /* bigger invisible touch area so a pin is easy to grab and drag */
+.rcpin{position:absolute;z-index:1100;left:50%;top:50%;width:0;height:0;pointer-events:none;--c:#178a4c}
+.rcpin.b{--c:#d23b3b}
+.rcpin[hidden]{display:none}
+.rcp-b{position:absolute;left:-15px;top:-37px;width:30px;height:30px;box-sizing:border-box;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.45);transition:top .15s}
+.rcp-b::after{content:"";position:absolute;inset:6px;border-radius:50%;background:#fff}
+.rcp-sh{position:absolute;left:-7px;top:-3px;width:14px;height:6px;border-radius:50%;background:rgba(0,0,0,.35);transition:transform .15s,opacity .15s}
+.rcpin.lift .rcp-b{top:-49px}.rcpin.lift .rcp-sh{transform:scale(.6);opacity:.6}
+.rcbar{position:absolute;z-index:1200;left:10px;right:10px;bottom:calc(var(--sh,250px) + 34px);display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;background:var(--card);border:1.5px solid var(--line);border-radius:16px;box-shadow:0 12px 28px -12px rgba(15,25,40,.5)}
+.rcbar[hidden]{display:none}
+.rca{flex:1;min-width:0}
+.rca small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mute)}
+.rca b{display:block;font-size:13.5px;font-weight:700;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.rcbar .cta{flex:none;width:auto;margin:0;padding:12px 14px;font-size:14.5px;border-radius:12px}
+.rcx{flex:none;width:34px;height:34px;padding:0;border:0;border-radius:10px;background:var(--bg);color:var(--mute);font-size:22px;line-height:1;cursor:pointer}
+.rcx[hidden]{display:none}
+
+/* ---------- Ride sheet: compact, so the map gets the room ---------- */
+#rsheet.picking #vehicles,#rsheet.picking #rbook,#rsheet.picking #rmeta{display:none}   /* shown again once both pins are set */
+.rsheet{padding:8px;bottom:8px}
+.rf input,.rf input:focus{padding:8px 0}
+.rf-go{width:30px;height:30px}
+.rf+.rf{margin-top:5px}
+.rmeta{margin:6px 2px 0;min-height:0}
+.vopts{gap:5px;margin-top:3px}
+.vo{padding:4px 3px;gap:0}
+.vo small{display:none}
+.vo b{font-size:13px}.vo .price{font-size:12.5px}
+.vo-i{height:26px!important;margin-bottom:0!important}
+.vo-i svg{width:16px!important;height:26px!important}
+#rbook{margin-top:6px;padding:11px;font-size:15px}
+.rcbar{padding:6px 6px 6px 12px}
+.rcbar .cta{padding:10px 13px}
+
+/* GPS pill: hidden while GPS is fine; the stall warning sits at the top so it never covers the job buttons */
+#gpspill.ok{display:none}
+#gpspill.bad{bottom:auto;top:calc(10px + env(safe-area-inset-top,0px))}
+
+/* ---------- Payment method ---------- */
+.rpay{display:flex;align-items:center;gap:5px;margin-top:6px}
+.rpay-l{flex:none;margin-right:2px;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+.pc{flex:1;min-width:0;padding:7px 2px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:border-color .2s,background-color .2s}
+.pc.sel{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri);background:color-mix(in srgb,var(--pri) 8%,var(--card))}
+#rsheet.picking #rpay{display:none}
+.rt-pay{font-weight:700;color:var(--ink)}
+.jc-pay{margin:8px 0 0;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--pri) 10%,transparent);font-size:12.5px;font-weight:700}
+
+/* Pastel map look: soft tiles, bold yellow route with a white outline */
+/* light mode only; dark mode keeps its own invert filter */
+:root:not([data-theme=dark]) .leaflet-tile-pane{filter:saturate(.7) brightness(1.07) contrast(.9)}
+.rt-line{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.rm-pin{border-radius:50%;transform:none;border-width:4px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.rm-pin i{inset:5px}
+
+/* Call / Message / Cancel bar (rider <-> customer) */
+.ct{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 0}.ct.two{grid-template-columns:1fr 1fr}
+.ct-b{display:flex;align-items:center;justify-content:center;gap:7px;height:46px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:14px;text-decoration:none;cursor:pointer;padding:0 8px}
+.ct-b svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ct-b:active{transform:scale(.97)}
+.ct-x{color:#d23b3b;border-color:color-mix(in srgb,#d23b3b 35%,var(--line));background:color-mix(in srgb,#d23b3b 7%,var(--card))}
+.ct-x:disabled{opacity:.5}

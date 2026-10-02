@@ -7,7 +7,7 @@ function fpOpen() {
   const c = st.fgeo || RM.a || { lat: RM_CENTER[0], lng: RM_CENTER[1] };
   if (!FP.map) {
     FP.map = L.map("fpmap", { zoomControl: false }).setView([c.lat, c.lng], 15);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(FP.map);
+    biyaheTiles().addTo(FP.map);
     L.control.zoom({ position: "topright" }).addTo(FP.map);
     FP.map.on("click", e => { fpSug([]); document.activeElement.blur(); fpSet(e.latlng); });
     new ResizeObserver(() => { FP.map.invalidateSize(); $("#fpick").style.setProperty("--sh", $("#fpsheet").offsetHeight + "px"); }).observe($("#fpick"));
