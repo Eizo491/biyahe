@@ -690,6 +690,7 @@ nav button::after{content:"";position:absolute;left:32%;right:32%;bottom:0;heigh
 .rp-who{flex:1;min-width:0}
 .rp-who b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rp-who small{display:block;color:var(--mute);font-size:13px}
+.rt>.rp-plate{flex:none}
 .rp-plate{flex:none;text-align:center;padding:4px 10px 5px;border:2px solid #16202e;border-radius:8px;background:#fff;color:#16202e;line-height:1.1}
 .rp-plate small{display:block;font-size:9px;letter-spacing:.08em;font-weight:700;color:#586474}
 .rp-plate b{font-size:17px;letter-spacing:.06em;font-weight:800}
@@ -786,7 +787,7 @@ nav button::after{content:"";position:absolute;left:32%;right:32%;bottom:0;heigh
 .rm-pin i{inset:5px}
 
 /* Call / Message / Cancel bar (rider <-> customer) */
-.ct{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 0}.ct.two{grid-template-columns:1fr 1fr}
+.ct{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 0}.ct.two{grid-template-columns:1fr 1fr}.ct.one{grid-template-columns:1fr}
 .ct-b{display:flex;align-items:center;justify-content:center;gap:7px;height:46px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:14px;text-decoration:none;cursor:pointer;padding:0 8px}
 .ct-b svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ct-b:active{transform:scale(.97)}
@@ -803,3 +804,57 @@ nav button::after{content:"";position:absolute;left:32%;right:32%;bottom:0;heigh
 .ntb-a button{border:0;border-radius:11px;padding:9px 16px;font:inherit;font-weight:800;font-size:14px;cursor:pointer;background:var(--pri);color:var(--onpri)}
 .ntb-a button[data-ntb=no]{background:none;color:var(--mute)}
 @media(prefers-reduced-motion:reduce){#ntbanner{transition:opacity .2s}}
+
+/* Compact trip sheet: smaller rows so the map keeps most of the screen. The grip on top folds it down to the essentials. */
+.rsheet:has(#rtrip:not([hidden])){padding:4px 8px 8px}
+.rgrip{display:block;width:100%;height:20px;margin:0;padding:0;border:0;background:none;cursor:pointer}
+.rgrip::before{content:"";display:block;width:40px;height:4px;margin:8px auto 0;border-radius:99px;background:var(--line)}
+#rtrip .rt-ok{margin-bottom:6px;gap:8px}
+#rtrip .rt-ok b{font-size:14px}
+#rtrip .rt-check{width:26px;height:26px}#rtrip .rt-check svg{width:15px;height:15px}
+#rtrip .rt-rider{padding:6px 8px;gap:8px}
+#rtrip .rt-rider b{font-size:14px}
+#rtrip .rk-av{width:30px;height:30px}
+#rtrip .rp-plate{padding:2px 8px 3px}#rtrip .rp-plate b{font-size:14px}#rtrip .rp-plate small{font-size:8px}
+#rtrip .ct{margin-top:6px;gap:6px}
+#rtrip .ct-b{height:38px;font-size:13px;border-radius:12px}
+#rtrip .rt-bar{margin-top:6px;height:4px}
+#rtrip .rt-note{margin-top:4px}
+#rtrip .shb{margin:6px 0 0}
+#rtrip .shb-start{min-height:34px;padding:5px 12px;font-size:13px}
+#rtrip .shb-hint,#rtrip .shb-on small{display:none}
+#rtrip .cta{margin-top:6px;padding:11px}
+#rsheet.mini #rtrip :is(.rt-note,.shb,.rt-bar,.rt-ok small){display:none}
+
+/* Food order sheet: same compact layout + fold grip as the ride sheet */
+#tsheet{padding:4px 8px 8px}
+#tsheet .rt b{font-size:14px}
+#tsheet .rt-check,#tsheet .rt-spin{width:26px;height:26px}#tsheet .rt-check svg,#tsheet .rt-check .ic{width:15px;height:15px}
+#tsheet .rp{margin:6px 0 0;padding:6px 8px;gap:8px}
+#tsheet .rk-av{width:30px;height:30px}
+#tsheet .rp-who b{font-size:14px}
+#tsheet .rp-plate{padding:2px 8px 3px}#tsheet .rp-plate b{font-size:14px}#tsheet .rp-plate small{font-size:8px}
+#tsheet .ct{margin-top:6px;gap:6px}
+#tsheet .ct-b{height:38px;font-size:13px;border-radius:12px}
+#tsheet .rt-note,#tsheet .rp-note{margin-top:4px}
+#tsheet .shb{margin:6px 0 0}
+#tsheet .shb-start{min-height:34px;padding:5px 12px;font-size:13px}
+#tsheet .shb-hint,#tsheet .shb-on small{display:none}
+#tsheet .tk-steps{margin-top:8px;gap:4px}#tsheet .tk-steps li{font-size:13px}
+#tsheet .cta,#tsheet .cta[data-tkx]{margin-top:6px;padding:10px;font-size:14px}
+#tsheet.mini :is(.rt-note,.rp-note,.shb,.tk-steps){display:none}
+
+/* Send-link picker (Messages, Messenger, Viber...) */
+#shpick{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:color-mix(in srgb,var(--ink) 45%,transparent);animation:fadein .25s ease-out both}
+#shpick.on{display:flex}
+.shp{padding-top:18px}
+.shp-h{display:flex;align-items:center;justify-content:space-between}
+.shp-h b{font-size:18px}
+.shp-x{all:unset;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;font-size:26px;line-height:1;color:var(--mute);border-radius:50%}
+.shp-s{display:block;margin:2px 0 14px;color:var(--mute);font-size:13px}
+.shp-g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.shp-b{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);font-size:13px;font-weight:700;text-align:center}
+.shp-b:active{transform:scale(.96)}
+.shp-b:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.shp-i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.shp-i svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}

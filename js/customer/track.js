@@ -22,6 +22,8 @@ async function openTrack(id) {
   if (!rg || !cg) { toast("Tracking isn't available for this order"); return; }
   Object.assign(TK, { b, id: String(id), stage: -1, pos: null, rs: 0, rt: 0 });
   $("#track").classList.add("on");
+  $("#tsheet").classList.add("mini");   // starts folded; the grip on the sheet shows everything
+  TK.ro = new ResizeObserver(() => $("#track").style.setProperty("--sh", $("#tsheet").offsetHeight + "px")); TK.ro.observe($("#tsheet"));
   TK.map = L.map("tmap", { zoomControl: false }).setView([cg.lat, cg.lng], 15);
   biyaheTiles().addTo(TK.map);
   TK.rm = L.marker([rg.lat, rg.lng], { icon: tkIcon("", "Restaurant") }).addTo(TK.map);
@@ -38,7 +40,7 @@ function tkRender() {
   const b = TK.b, s = tkStage(b), rn = esc(b.details?.restaurant?.name || "the restaurant"), box = $("#tsheet");
   if (b.status === "cancelled") { box.innerHTML = `<div class="rt"><div><b>Order cancelled</b></div></div><button type="button" class="cta alt" data-tkx>Close</button>`; return; }
   const head = ["Finding a rider for your order…", `Your rider is heading to ${rn}`, `Your rider is at ${rn} picking up your order`, "Your rider is on the way to you", "Delivered. Enjoy your meal!"][s];
-  box.innerHTML = `<div class="rt">${s < 4 ? `<span class="rt-spin"></span>` : `<span class="rt-check">${ico("check")}</span>`}<div><b>${head}</b><small id="tketa">${tkEta()}</small></div></div>${s >= 1 ? riderCard(TK.id, s === 4) : ""}${s >= 1 && s < 4 ? `<small class="rt-note">Your rider can see your live location while this screen is open.</small>` : ""}
+  box.innerHTML = `<button type="button" class="rgrip" data-tkgrip aria-label="Show less or more of the order details" aria-expanded="${!box.classList.contains("mini")}"></button><div class="rt">${s < 4 ? `<span class="rt-spin"></span>` : `<span class="rt-check">${ico("check")}</span>`}<div><b>${head}</b><small id="tketa">${tkEta()}</small></div></div>${s >= 1 ? riderCard(TK.id, s === 4, { cancel: s < 3 }) : s === 0 ? ctCancel() : ""}${s >= 1 && s < 4 ? `<small class="rt-note">Your rider can see your live location while this screen is open.</small>` : ""}
     ${s < 4 ? shareBar(TK.id) : ""}
     <ol class="tk-steps">${TK_STEPS.map((t, i) => `<li class="${i < s ? "done" : i === s ? "now" : ""}">${t}</li>`).join("")}</ol>
     ${s === 4 ? (b.rider_id ? `<button type="button" class="cta" data-rate>Rate your rider</button>` : "") + `<button type="button" class="cta alt" data-tkx>Close</button>` : `<button type="button" class="cta alt" data-tkx>Hide · track again from Activity</button>`}`;
@@ -87,6 +89,7 @@ function closeTrack() {
   $("#track").classList.remove("on");
   if (TK.watch != null) navigator.geolocation.clearWatch(TK.watch);
   clearInterval(TK.timer);
+  if (TK.ro) TK.ro.disconnect();
   [TK.ch, TK.bc].forEach(c => c && sb.removeChannel(c));
   if (TK.map) TK.map.remove();
   for (const k in TK) delete TK[k];
@@ -96,5 +99,15 @@ function closeTrack() {
 $("#tkx").onclick = () => { closeTrack(); loadActs(); };
 $("#tsheet").onclick = e => {
   if (e.target.closest("[data-rate]")) { const id = TK.id; closeTrack(); openReview(id); }
+  else if (e.target.closest("[data-tkgrip]")) { const g = e.target.closest("[data-tkgrip]"), mini = $("#tsheet").classList.toggle("mini"); g.setAttribute("aria-expanded", String(!mini)); }   // fold / unfold
   else if (e.target.closest("[data-tkx]")) { closeTrack(); loadActs(); }
+  else if (e.target.closest("[data-ctcancel]")) {   // Cancel the order until the rider is on the way to you
+    const c = e.target.closest("[data-ctcancel]");
+    if (!confirm("Cancel this order?")) return;
+    c.disabled = true;
+    sb.from("bookings").update({ status: "cancelled" }).eq("id", TK.id).then(({ error }) => {
+      if (error) { c.disabled = false; toast("Couldn't cancel. Please try again."); return; }
+      TK.b = { ...TK.b, status: "cancelled" }; tkRender();
+    });
+  }
 };

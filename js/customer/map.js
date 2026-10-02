@@ -261,7 +261,8 @@ function rmLock(on) {
   RM.locked = on;
   rmEl("#rmap").classList.toggle("locked", on);
   ["am", "bm"].forEach(m => { const d = RM[m] && RM[m].dragging; if (d) on ? d.disable() : d.enable(); });
-  rmEl("#rplan").hidden = on; rmEl("#rtrip").hidden = !on;
+  rmEl("#rplan").hidden = on; rmEl("#rtrip").hidden = !on; rmEl("#rgrip").hidden = !on;
+  rmEl("#rsheet").classList.toggle("mini", on); rmEl("#rgrip").setAttribute("aria-expanded", String(!on));   // a trip starts folded (tap the grip for everything); planning shows the normal sheet
   rmHint(); rmPickUI();
 }
 
@@ -367,7 +368,7 @@ function rmAccepted() {   // a real rider took the job: the sample riders disapp
   if (RM.radar) { RM.radar.remove(); RM.radar = null; }
   Object.assign(tr, { phase: "go", tphase: null, total: 0, left: null });
   RM.pkey = "";
-  toast("A rider accepted your booking");
+  if (!RM.quiet) toast("A rider accepted your booking");
   rmPanel(true);
   loadRiders().then(() => { if (RM.trip === tr) { RM.pkey = ""; rmPanel(true); } });   // name + plate
   if (RM.real.pos) rmRiderPos(RM.real.pos);
@@ -416,7 +417,7 @@ function rmTripStart() {   // the rider tapped Start trip
   Object.assign(tr, { phase: "trip", tphase: null, total: 0, left: null });
   if (rl && rl.line) { rl.line.remove(); rl.line = null; }
   RM.pkey = "";
-  toast("Your rider started the trip");
+  if (!RM.quiet) toast("Your rider started the trip");
   rmPanel(true);
   rmFitTo([RM.a, RM.b]);
   if (rl && rl.pos) rmRiderPos(rl.pos);
@@ -440,7 +441,23 @@ function rmResume(b) {
   RM.trip = { phase: "search", veh: g.vehicle || "Motorcycle", total: 1 };
   rmPanel(true);
   rmLive(b.id);
+  RM.quiet = true; try { rmStatus(b); } finally { RM.quiet = false; }   // jump straight to the booking's real stage (no "waiting" flicker, no repeat toasts)
   return true;
+}
+
+// "Track ride" in Activity: show this ride on the Ride tab's live map, re-opened at its current stage.
+function rmShow(a) {
+  if (!a || !RM.map) { toast("Tracking isn't available for this ride"); return; }
+  const open = RM.trip && RM.bid != null && String(RM.bid) === String(a.id);   // already on screen (just booked)
+  setTimeout(() => {   // wait for the tab to be visible so the map has its real size
+    if (!RM.map) return;
+    RM.map.invalidateSize();
+    if (!open && !rmResume(a)) { toast("Tracking isn't available for this ride"); return; }
+    const rl = RM.real, ph = RM.trip?.phase;
+    if (ph === "trip") rmFitTo([RM.a, RM.b, rl && rl.pos]);
+    else if (rl && rl.pos && ph !== "search") rmFitTo([RM.a, rl.pos]);
+    else rmFitTo([RM.a]);
+  }, 80);
 }
 
 function rmEnd(silent) {   // clear the trip from the map; keep the start pin, clear the finish
@@ -467,9 +484,9 @@ function rmPanel(force) {
     RM.pkey = key;
     const same = RM.riders.filter(x => x.veh === tr.veh).length, moving = tr.phase === "go" || tr.phase === "trip";
     const ok = (t, s) => `<div class="rt-ok"><span class="rt-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><b>${t}</b><small>${s}</small></div></div>`;
-    const who = tr.phase === "search" ? "" : `<div class="rt rt-rider"><span class="rk-av vh-th">${vhSvg(info?.vehicle || rmVeh())}</span><div><b>${info ? esc(info.rider_name) : "Your rider"}</b><small>${info ? `${esc(info.vehicle || rmVeh())} · ${esc(info.plate)}${info.review_count ? " · ★ " + info.avg_rating : ""}` : esc(rmVeh())}</small></div>${moving ? `<div class="rt-eta"><b id="rteta">–</b><small>${tr.phase === "go" ? "away" : "to go"}</small></div>` : ""}</div>`;
+    const who = tr.phase === "search" ? "" : `<div class="rt rt-rider"><span class="rk-av vh-th">${vhSvg(info?.vehicle || rmVeh())}</span><div><b>${info ? esc(info.rider_name) : "Your rider"}</b><small>${info ? `${esc(info.vehicle || rmVeh())}${info.review_count ? " · ★ " + info.avg_rating : ""}` : esc(rmVeh())}</small></div>${info?.plate ? `<div class="rp-plate" aria-label="Plate number ${esc(info.plate)}"><small>PLATE NO.</small><b>${esc(info.plate)}</b></div>` : ""}${moving ? `<div class="rt-eta"><b id="rteta">–</b><small>${tr.phase === "go" ? "away" : "to go"}</small></div>` : ""}</div>`;
     box.innerHTML = tr.phase === "search"
-      ? `<div class="rt"><span class="rt-spin"></span><div><b>Ride booked. Waiting for a rider to accept…</b><small>${RM.riders.length ? `${RM.riders.length} sample riders shown nearby · ${same} ${tr.veh.toLowerCase()} in range` : "Your booking is open to riders now. It updates here when one accepts."}</small></div></div>${RM.riders.length ? `<small class="rt-note">Riders on the map are samples until a real rider accepts your booking.</small>` : ""}`
+      ? `<div class="rt"><span class="rt-spin"></span><div><b>Ride booked. Waiting for a rider to accept…</b><small>${RM.riders.length ? `${RM.riders.length} sample riders shown nearby · ${same} ${tr.veh.toLowerCase()} in range` : "Your booking is open to riders now. It updates here when one accepts."}</small></div></div>${RM.riders.length ? `<small class="rt-note">Riders on the map are samples until a real rider accepts your booking.</small>` : ""}${ctCancel()}`
       : tr.phase === "go" ? `${ok("Rider accepted", "Your rider is on the way")}${who}<div class="rt-bar"><i id="rtbar"></i></div><small class="rt-note" id="rtnote"></small>`
       : tr.phase === "arrived" ? `${ok("Your rider has arrived", "Waiting for your rider to start the trip")}${who}<small class="rt-note">The trip begins when your rider taps Start trip.</small>`
       : tr.phase === "trip" ? `${ok("Trip started", "Heading to " + esc(RM.txt.b))}${who}<div class="rt-bar"><i id="rtbar"></i></div>`
@@ -532,7 +549,7 @@ function rideStop() {
   RM.map.remove();
   Object.assign(RM, rmFresh());
   ["#rp", "#rd"].forEach(s => rmEl(s).value = "");
-  rmSug([]); rmPickUI(); rmEl("#rplan").hidden = false; rmEl("#rtrip").hidden = true; rmEl("#rtrip").innerHTML = "";
+  rmSug([]); rmPickUI(); rmEl("#rplan").hidden = false; rmEl("#rtrip").hidden = true; rmEl("#rtrip").innerHTML = ""; rmEl("#rgrip").hidden = true; rmEl("#rsheet").classList.remove("mini");
   rmEl("#rmap").classList.remove("locked");
   renderVeh();
 }
@@ -571,6 +588,10 @@ rmEl("#rcgo").onclick = () => {   // confirm: the spot under the pin becomes the
   rmSet(RM.mode, ll, same ? { text: cp.text, fit: true } : { fit: true });
 };
 rmEl("#rccancel").onclick = () => { RM.pick = false; rmHint(); rmPickUI(); };
+rmEl("#rgrip").onclick = () => {   // fold the trip sheet down to the essentials (rider, plate, Call / Message / Cancel) and back
+  const sh = rmEl("#rsheet"), mini = sh.classList.toggle("mini");
+  rmEl("#rgrip").setAttribute("aria-expanded", String(!mini));
+};
 rmEl("#rtrip").onclick = e => {
   if (e.target.closest("[data-rate]")) { const id = RM.bid; rmEnd(); if (id) openReview(id); }
   else if (e.target.closest("[data-done],[data-close]")) rmEnd();
@@ -581,7 +602,7 @@ document.addEventListener("themechange", () => { if (RM.line) RM.line.setStyle({
 
 document.addEventListener("click", async e => {   // Cancel the ride while the rider is still on the way
   const c = e.target.closest("#rtrip [data-ctcancel]"); if (!c || !RM.real) return;
-  if (!confirm("Cancel this ride? Your rider is already on the way.")) return;
+  if (!confirm(RM.trip?.phase === "search" ? "Cancel this ride?" : "Cancel this ride? Your rider is already on the way.")) return;
   c.disabled = true;
   const id = RM.real.id, { error } = await sb.from("bookings").update({ status: "cancelled" }).eq("id", id);
   if (error) { c.disabled = false; toast("Couldn't cancel. Please try again."); return; }

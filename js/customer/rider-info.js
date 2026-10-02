@@ -11,12 +11,12 @@ async function loadRiders() {
 }
 
 // Small card: rider name, vehicle + rating, and the plate shown like a real plate.
-function riderCard(id, done) {
+function riderCard(id, done, o = {}) {   // o.cancel: the map sheet also shows a Cancel button
   const r = RIDERS.get(String(id));
   if (!r) return "";
   const rate = r.review_count ? ` · ★ ${r.avg_rating}` : "";
   return `<div class="rp"><span class="rk-av vh-th">${vhSvg(r.vehicle || "Motorcycle")}</span>
     <div class="rp-who"><b>${esc(r.rider_name)}</b><small>${esc(r.vehicle || "Rider")}${rate}</small></div>
     <div class="rp-plate" aria-label="Plate number ${esc(r.plate)}"><small>PLATE NO.</small><b>${esc(r.plate)}</b></div></div>
-    ${done ? "" : `${ctBar(r.rider_phone)}<small class="rp-note">Check that the plate number matches before you ride or hand over anything.</small>`}`;
+    ${done ? "" : `${ctBar(r.rider_phone, o)}<small class="rp-note">Check that the plate number matches before you ride or hand over anything.</small>`}`;
 }

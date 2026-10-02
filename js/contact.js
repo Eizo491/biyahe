@@ -11,6 +11,8 @@ function ctBar(phone, o = {}) {   // o.cancel: also show a Cancel button (handle
   return `<div class="ct${o.cancel ? "" : " two"}">${b("call", "Call", "tel:")}${b("msg", "Message", "sms:")}${o.cancel ? `<button type="button" class="ct-b ct-x" data-ctcancel>${CT_I.x}<span>Cancel</span></button>` : ""}</div>`;
 }
 document.addEventListener("click", e => { if (e.target.closest("[data-ctno]")) toast("Their phone number isn't available yet."); });
+// Cancel on its own (before a rider has accepted, there is nobody to call yet).
+const ctCancel = () => `<div class="ct one"><button type="button" class="ct-b ct-x" data-ctcancel>${CT_I.x}<span>Cancel</span></button></div>`;
 const CT_CUST = new Map();   // rider side: booking id -> customer's phone
 async function ctCustomerPhone(id) {
   id = String(id); if (CT_CUST.has(id)) return CT_CUST.get(id);

@@ -70,16 +70,46 @@ async function shPush() {
 }
 
 // ---------- Buttons ----------
-async function shSend(id) {
+// "Send link" opens a picker so the customer chooses the app: Messages, Messenger, Viber, WhatsApp, Telegram, Email, or copy the link.
+const SH_TEXT = "Follow my Biyahe trip live. You can see where I am and who my rider is:";
+const SH_APPS = [
+  { k: "sms", n: "Messages", c: "#34c759", i: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/>', href: (u, t) => "sms:?&body=" + encodeURIComponent(t + " " + u) },
+  { k: "msgr", n: "Messenger", c: "#0a84ff", i: '<path d="M12 3a9 9 0 0 0-9 8.8c0 2.4 1 4.6 2.7 6.1V21l2.8-1.6c.8.2 1.6.4 2.5.4a9 9 0 0 0 0-17.8zM8 14l3-3.2 2 2 3-2.8"/>', href: u => "fb-messenger://share/?link=" + encodeURIComponent(u), copy: true },
+  { k: "viber", n: "Viber", c: "#7360f2", i: '<path d="M6 4h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-4 4v-4H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM9 8.500c0 3 2.500 5.500 5.500 5.500"/>', href: (u, t) => "viber://forward?text=" + encodeURIComponent(t + " " + u), copy: true },
+  { k: "wa", n: "WhatsApp", c: "#25d366", i: '<path d="M4 20l1.300-4A8 8 0 1 1 8.200 18.800zM9 9c0 3 3 6 6 6"/>', href: (u, t) => "https://wa.me/?text=" + encodeURIComponent(t + " " + u) },
+  { k: "tg", n: "Telegram", c: "#29a9eb", i: '<path d="M21 4L3 11l6 2 2 6 3-4 5 3z"/>', href: (u, t) => "https://t.me/share/url?url=" + encodeURIComponent(u) + "&text=" + encodeURIComponent(t) },
+  { k: "mail", n: "Email", c: "#8e8e93", i: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>', href: (u, t) => "mailto:?subject=" + encodeURIComponent("My Biyahe trip") + "&body=" + encodeURIComponent(t + "\n" + u) }
+];
+async function shCopy(url, quiet) {
+  try { await navigator.clipboard.writeText(url); if (!quiet) toast("Link copied. Paste it to someone you trust."); return true; }
+  catch (_) { window.prompt("Copy this link and send it to someone you trust:", url); return false; }
+}
+function shPickClose() { const m = document.getElementById("shpick"); if (m) m.classList.remove("on"); }
+function shSend(id) {
   const token = SH.get(String(id)); if (!token) return;
-  const url = shUrl(token), text = "Follow my Biyahe trip live. You can see where I am and who my rider is:";
-  try {
-    if (navigator.share) { await navigator.share({ title: "My Biyahe trip", text, url }); return; }
-    await navigator.clipboard.writeText(url); toast("Link copied. Paste it to someone you trust.");
-  } catch (e) {
-    if (e && e.name === "AbortError") return;   // the customer closed the share sheet
-    window.prompt("Copy this link and send it to someone you trust:", url);
+  let m = document.getElementById("shpick");
+  if (!m) {
+    m = document.createElement("div"); m.id = "shpick"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", "Send trip link");
+    document.body.appendChild(m);
+    m.onclick = e => {
+      if (e.target === m || e.target.closest("[data-shx]")) { shPickClose(); return; }
+      const a = e.target.closest("[data-shapp]"); if (!a) return;
+      const url = m.dataset.url, k = a.dataset.shapp;
+      if (k === "copy") { shCopy(url); shPickClose(); return; }
+      if (k === "more") { shPickClose(); navigator.share({ title: "My Biyahe trip", text: SH_TEXT, url }).catch(() => {}); return; }
+      const app = SH_APPS.find(x => x.k === k); if (!app) return;
+      if (app.copy) shCopy(url, true).then(ok => { if (ok) toast("Link copied too, in case " + app.n + " doesn't open"); });   // app links only work when that app is installed
+      window.location.href = app.href(url, SH_TEXT);
+      shPickClose();
+    };
   }
+  m.dataset.url = shUrl(token);
+  m.innerHTML = `<div class="sheet shp"><div class="shp-h"><b>Send your trip link</b><button type="button" class="shp-x" data-shx aria-label="Close">&times;</button></div>
+    <small class="shp-s">Pick the app. Only the person you send it to can follow your trip.</small>
+    <div class="shp-g">${SH_APPS.map(a => `<button type="button" class="shp-b" data-shapp="${a.k}"><span class="shp-i" style="background:${a.c}"><svg viewBox="0 0 24 24" aria-hidden="true">${a.i}</svg></span><span>${a.n}</span></button>`).join("")}
+    <button type="button" class="shp-b" data-shapp="copy"><span class="shp-i" style="background:var(--ink)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></span><span>Copy link</span></button>
+    ${navigator.share ? `<button type="button" class="shp-b" data-shapp="more"><span class="shp-i" style="background:var(--mute)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.500"/><circle cx="12" cy="12" r="1.500"/><circle cx="19" cy="12" r="1.500"/></svg></span><span>More apps</span></button>` : ""}</div></div>`;
+  m.classList.add("on");
 }
 async function shStart(id, btn) {
   if (btn) btn.disabled = true;
@@ -87,7 +117,7 @@ async function shStart(id, btn) {
   if (error) { toast(error.message); if (btn) btn.disabled = false; return; }
   SH.set(String(id), token); shSync(); shRefresh();
   if (navigator.geolocation) navigator.geolocation.getCurrentPosition(p => { SHW.pos = { lat: p.coords.latitude, lng: p.coords.longitude }; shLast = 0; shPush(); }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
-  shSend(id);   // opens the phone's share sheet right away (if the browser blocks it, the Send link button does the same)
+  shSend(id);   // opens the app picker right away (the Send link button opens it again later)
 }
 async function shStop(id, quiet) {
   id = String(id);
