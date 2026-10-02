@@ -133,15 +133,45 @@ document.querySelectorAll("#auth .f input").forEach(i => {
 authSet("in");
 
 // ---------- Continue with Google ----------
-// Supabase: Authentication > Providers > Google (enable it) and add this page's address under Authentication > URL Configuration > Redirect URLs.
+// Supabase: Authentication > Providers > Google (enable it) and add these under Authentication > URL Configuration > Redirect URLs:
+// this site's address (web) AND com.biyahe.app://login (Android app).
+// Google refuses to sign in inside an app's WebView, so the Android app opens the real browser and returns through a deep link.
+const IS_NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+const NATIVE_REDIRECT = "com.biyahe.app://login";
 $("#google").onclick = async () => {
   const b = $("#google"); formMsg(""); UI.busy(b, true);
-  const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname } });
-  if (error) { UI.busy(b, false); formMsg(/not enabled|unsupported provider/i.test(error.message) ? "Google sign-in isn't set up yet. Turn on the Google provider in Supabase." : friendly(error.message)); }
+  try {
+    const { data, error } = await sb.auth.signInWithOAuth({ provider: "google",
+      options: IS_NATIVE ? { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true } : { redirectTo: location.origin + location.pathname } });
+    if (error) throw error;
+    if (IS_NATIVE) { await Capacitor.Plugins.Browser.open({ url: data.url }); UI.busy(b, false); }
+  } catch (err) {
+    UI.busy(b, false);
+    const m = String(err && err.message || err);
+    formMsg(/not enabled|unsupported provider/i.test(m) ? "Google sign-in isn't set up yet. Turn on the Google provider in Supabase." : friendly(m));
+  }
 };
+if (IS_NATIVE && Capacitor.Plugins.App) {
+  Capacitor.Plugins.App.addListener("appUrlOpen", async ({ url }) => {
+    if (!url || !url.startsWith(NATIVE_REDIRECT)) return;
+    try { await Capacitor.Plugins.Browser.close(); } catch (_) {}
+    const q = new URLSearchParams(url.split("#")[1] || url.split("?")[1] || "");
+    let error;
+    if (q.get("code")) ({ error } = await sb.auth.exchangeCodeForSession(q.get("code")));
+    else if (q.get("access_token")) ({ error } = await sb.auth.setSession({ access_token: q.get("access_token"), refresh_token: q.get("refresh_token") }));
+    else error = { message: q.get("error_description") || "Google sign-in was cancelled." };
+    if (error) formMsg(friendly(error.message));
+  });
+}
 
 // ---------- Google accounts have no phone number yet: ask for it before the app opens ----------
-const needPhone = async u => { const { data, error } = await sb.from("profiles").select("phone").eq("id", u.id).maybeSingle(); return !error && !(data && normPhone(data.phone)); };
+// Test accounts (listed in supabase/test-accounts.sql) skip the phone step. The list lives in the database, so users can't add themselves.
+const needPhone = async u => {
+  const { data: isTest } = await sb.rpc("is_test_account");   // errors (SQL not run yet) -> treated as a normal account
+  if (isTest === true) return false;
+  const { data, error } = await sb.from("profiles").select("phone").eq("id", u.id).maybeSingle();
+  return !error && !(data && normPhone(data.phone));
+};
 let phGateP = null;
 function phoneGate(user) {
   if (phGateP) return phGateP;
